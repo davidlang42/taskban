@@ -3,7 +3,7 @@
 const DEV_PREFIX = "dev";
 const DEV_URL = "https://script.google.com/macros/s/AKfycbywqogvOo3_V_uRdvRpVFHSvgKhGzIibPDUX_wY4o0/dev";
 const PROD_URL = "https://script.google.com/macros/s/AKfycbxSDJouDbOKVTQ3cnnGaJaLW5EbR86YRTwCX-PJb7Mvua9egDM/exec"; // also hardcoded in appsscript.json
-const TITLE_SUFFIX = " :: FooBar";
+const TITLE_SUFFIX = " :: TaskBan";
 const TRUNCATE_NOTES_LENGTH = 150;
 const ESSENTIAL_NOTES_DELIMETER = "///";
 const SHOW_DETAILS_THRESHOLD = 5;
