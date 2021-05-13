@@ -1,4 +1,4 @@
-// Future tasks stored in TaskBan: http://taskban.davidlang.net/taskban
+// Future tasks/issues on github: https://github.com/davidlang42/taskban
 
 const DEV_PREFIX = "dev";
 const DEV_URL = "https://script.google.com/macros/s/AKfycbywqogvOo3_V_uRdvRpVFHSvgKhGzIibPDUX_wY4o0/dev";
