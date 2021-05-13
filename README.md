@@ -6,7 +6,9 @@ There is a small amount of metadata stored in the Google Apps Script Properties 
 
 Hosted directly on Google Apps Script, free for anyone to use: https://taskban.davidlang.net
 But by all means, buy me a coffee.
+<aside>
 <script type='text/javascript' src='https://storage.ko-fi.com/cdn/widget/Widget_2.js'></script><script type='text/javascript'>kofiwidget2.init('Buy Me a Ko-fi', '#29abe0', 'K3K21PCIK');kofiwidget2.draw();</script> 
+ </aside>
 
 ## Set up local repo
 * Clone git repo: `git clone https://github.com/davidlang42/taskban.git`
