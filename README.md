@@ -6,7 +6,7 @@ There is a small amount of metadata stored in the Google Apps Script Properties 
 
 Hosted directly on Google Apps Script, free for anyone to use: https://taskban.davidlang.net
 
-But by all means, [buy me a coffee](https://ko-fi.com/K3K21PCIK).
+But by all means, [buy me a coffee](https://ko-fi.com/davidlang42).
 
 ## Set up local repo
 * Clone git repo: `git clone https://github.com/davidlang42/taskban.git`
