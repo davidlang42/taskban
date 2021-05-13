@@ -1,0 +1,747 @@
+<?
+// inputs: board = taskList
+?>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.10.2/Sortable.min.js" integrity="sha256-8Ww0c1qKDMdHT2+3s3369kzSXcgIrvqzSwzjdZ5qHDs=" crossorigin="anonymous"></script>
+<script>
+// drag & drop
+
+const drag = (event) => {
+  event.dataTransfer.setData("text/plain", event.target.id);
+}
+
+const allowDrop = (ev) => {
+  ev.preventDefault();
+  if (hasClass(ev.target,"dropzone")) {
+    addClass(ev.target,"droppable");
+  }
+}
+
+const clearDrop = (ev) => {
+    removeClass(ev.target,"droppable");
+}
+
+const drop = (event) => {
+  event.preventDefault();
+  const data = event.dataTransfer.getData("text/plain");
+  const element = document.querySelector(`#${data}`);
+  const listName = event.target.parentNode.id; //task div layer changes will make this fail
+  try {
+    // remove the spacer content from dropzone
+    event.target.removeChild(event.target.firstChild);
+    // add the draggable content
+    event.target.appendChild(element);
+    // remove the dropzone parent
+    unwrap(event.target);
+    // save the change to google tasks
+    moveTaskAsync(data, listName);
+  } catch (error) {
+    console.warn("can't move the item to the same place");
+  }
+  updateDropzones();
+  updateTaskCount();
+}
+
+const updateDropzones = () => {
+    /* after dropping, refresh the drop target areas
+      so there is a dropzone after each item
+      using jQuery here for simplicity */
+    var dropzone = '<div class="dropzone rounded" ondrop="drop(event)" ondragover="allowDrop(event)" ondragleave="clearDrop(event)"> &nbsp; </div>';
+    
+    var dz = $(dropzone);
+    
+    // delete old dropzones
+    $('.dropzone').remove();
+
+    // insert new dropdzone after each item   
+    dz.insertAfter('.card.draggable:visible');
+    
+    // insert new dropzone in any empty swimlanes
+    $(".items:not(:has(.card.draggable:visible))").append($(dropzone));
+};
+
+// helpers
+
+function unwrap(node) {
+    node.replaceWith(...node.childNodes);
+}
+
+function removeElementsByClass(className) {
+  var elements = document.getElementsByClassName(className); //LINQ-esk
+  for(var e of Array.from(elements)) {
+    e.parentNode.removeChild(e);
+  }
+}
+
+function openLink(url) {
+  window.open(url,"_blank");
+}
+
+function escapeHtml(html){
+  var p = document.createElement('p');
+  p.innerHTML = html;
+  return p.innerHTML;
+}
+
+// board ui
+
+function confirmLeave() {
+  var editDialogDisplay = document.getElementById('editDialog').style.display;
+  if (editDialogDisplay && editDialogDisplay != 'none') return "Edit changes may be lost."
+}
+
+function configureBoardEvents() {
+  $('.board-shortcut-keys').keydown(function (event) {
+    if ($('.modal').is(':visible')) return;
+    if (event.keyCode == 13 && event.ctrlKey) { // ctrl-enter
+      event.preventDefault();
+      $('#add_to_list_entry').click();
+    } else if (event.keyCode == 192) { // tilda
+      event.preventDefault();
+      $('#toggle_board_list').click();
+    } else if (event.keyCode == 109) { // numpad-minus
+      event.preventDefault();
+      $('#button_details').click();
+    }
+  });
+  $('.toggle-board-list-on-tilda').keydown(function (event) {
+    if (event.keyCode == 192) { // tilda
+      event.preventDefault();
+      $('#toggle_board_list').click();
+    }
+  });
+}
+
+// details visibility
+
+function toggleDetails(button) {
+  showDetails(button, button.innerHTML == "Show details");
+}
+
+function refreshDetails(button) {
+  showDetails(button, button.innerHTML != "Show details");
+}
+
+function showDetails(button,value) {
+  var lists = document.getElementsByClassName("items");
+  for(const list of lists) {
+    const elements = list.getElementsByClassName("details");
+    if(!elements || !elements.length) continue;
+    for(var e=0; e<elements.length; e++) {
+      if(list.id == "<?= board.properties.list_exit ?>") {
+        elements[e].style.display = "none";
+      } else {
+        elements[e].style.display = value ? "inherit" : "none";
+      }
+    }
+  }
+  button.innerHTML = value ? "Hide details" : "Show details";
+}
+
+var longestListLength = 0;
+
+function updateTaskCount() {
+  var newLongestListLength = 0;
+  var listCount;
+  var tasks;
+  var lists = document.getElementsByClassName("items");
+  for(var list of lists) {
+    listCount = 0;
+    tasks = list.getElementsByClassName("task");
+    for(var task of tasks) {
+      if (task.style.display != "none") listCount++;
+    }
+    if (list.id == "<?= board.properties.list_exit ?>") {
+      document.getElementById('exit_clear').style.display = listCount ? "initial" : "none";
+    } else {
+      if (listCount > newLongestListLength) newLongestListLength = listCount;
+    }
+  }
+  if (newLongestListLength > <?= SHOW_DETAILS_THRESHOLD ?> && longestListLength <= <?= SHOW_DETAILS_THRESHOLD ?>) {
+    showDetails(document.getElementById("button_details"), false);
+  } else if (newLongestListLength <= <?= SHOW_DETAILS_THRESHOLD ?> && longestListLength > <?= SHOW_DETAILS_THRESHOLD ?>) {
+    showDetails(document.getElementById("button_details"), true);
+  } else {
+    refreshDetails(document.getElementById("button_details"));
+  }
+  longestListLength = newLongestListLength;
+}
+
+// filtering
+
+function updateFilter() {
+  var elements = document.getElementsByClassName("filterable");
+  if(!elements || !elements.length) return;
+  var textbox = document.getElementById("filter_text");
+  if(!textbox) return;
+  var filter = textbox.value.toLowerCase();
+  for(var e=0; e<elements.length; e++) {
+    elements[e].style.display = elements[e].innerHTML.toLowerCase().indexOf(filter)==-1 ? "none":"inherit";
+  }
+  updateDropzones();
+  updateTaskCount();
+}
+
+function focusFilter() {
+  var e = $('#filter_text:visible');
+  if (e.length) e[0].focus();
+}
+
+// html formatting
+
+function formatHtmlTask(task,optimistic) {
+  var html = '<div class="task filterable card draggable shadow-sm';
+  if(optimistic) {
+    html += ' saving';
+    if(!task.id) html += ' newtask';
+    if(task.deleted) html += ' deleted';
+  }
+  html += '" id="'+task.id+'" draggable="true" ondragstart="drag(event)">'; // ideally put data-toggle/target/id back in root task div, once I find a way to stop link clicking from opening the edit dialog
+  html += '<div class="card-body p-2">';
+  html += '<div class="card-title"';
+  if(!task.deleted && task.id) html += ' data-toggle="modal" data-target="#editDialog" data-id="'+task.id+'"';
+  html += '>';
+  html += '<p class="float-right task-due'+getClassNameForDate(task.due)+'">'+formatHtmlDate(task.due)+'</p>';
+  html += '<p class="lead font-weight-light task-title">'+task.title+'</p>';
+  html += '</div>';
+  html += '<div class="details">';
+  html += '<p data-toggle="modal"';
+  if(!task.deleted && task.id) html += ' data-toggle="modal" data-target="#editDialog" data-id="'+task.id+'"';
+  html += ' class="task-notes">'+formatHtmlNotes(task.notes)+'</p>';
+  html += '<div class="task-links">'+formatHtmlLinks(task.links)+'</div>';
+  html += '</div>';
+  html += '</div>';
+  html += '</div>';
+  return html;
+}
+
+function formatHtmlLinks(links) {
+  if (!links) return "";
+  var html = "";
+  for (const link of links) {
+    html += '<button class="link btn btn-primary btn-sm" id="onelink" onClick="openLink(\''+link.link+'\');">'+link.description+'</button> ';
+  }
+  return html;
+}
+
+function formatHtmlNotes(notes) {
+  if(!notes) return "";
+  var link_regex = /([-a-zA-Z0-9()@:%_\+\.~#?&\/\\='"]+)? ?\((https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&\/\/=]*))\)/g;
+  var output = {
+    html: "",
+    length: 0,
+    limit: notes.includes('<?= ESSENTIAL_NOTES_DELIMETER ?>') ? notes.length : <?!= TRUNCATE_NOTES_LENGTH ?>
+  };
+  var lastIndex = 0;
+  const matches = notes.matchAll(link_regex);
+  for (const m of matches) {
+    addOutputText(output, notes.substring(lastIndex, m.index));
+    if (output.length > output.limit) break;
+    addOutputLink(output, m[2], m[1] ? m[1].replace(/_/g," ") : "LINK");
+    if (output.length > output.limit) break;
+    lastIndex = m.index + m[0].length;
+  }
+  if (output.length <= output.limit) addOutputText(output, notes.substring(lastIndex), true);
+  var delimeter_index = output.html.indexOf('<?= ESSENTIAL_NOTES_DELIMETER ?>');
+  if (delimeter_index >= 0) output.html = output.html.substring(0, delimeter_index).trim();
+  return output.html.replace(/\n/g,"<br>");
+}
+
+function addOutputText(output, str) {
+  if (output.length + str.length > output.limit) {
+    output.html += str.substring(0, output.limit-output.length);
+    output.length = output.limit+1;
+  } else {
+    output.html += str;
+    output.length += str.length;
+  }
+  addOutputOverflow(output);
+}
+
+function addOutputOverflow(output) {
+  if (output.length > output.limit) {
+    output.html += "...";
+    output.length += 3;
+  }
+}
+
+function addOutputLink(output, url, label) {
+  output.html += `<a href='${url}' target='_blank'>${label}</a>`;
+  output.length += label.length;
+  addOutputOverflow(output);
+}
+
+const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+function formatHtmlDate(date_string) {
+  if(!date_string) return "";
+  var d = new Date(date_string);
+  return d.getDate()+'-'+MONTH_NAMES[d.getMonth()]+'-'+d.getFullYear();
+}
+
+// move task
+
+function moveTaskAsync(taskId,listName) {
+  var ele = document.getElementById(taskId);
+  addClass(ele,"saving");
+  google.script.run.withSuccessHandler(updateTaskSuccess).withFailureHandler(updateTaskFailure).withUserObject(taskId).moveTask("<?= board.id ?>", taskId, listName);
+}
+
+// settings dialog
+
+function configureSettingsDialogEvents() {
+  Sortable.create(document.getElementById('settings_lists'));
+  Sortable.create(document.getElementById('settings_links'));
+  var settingsDialog = $('#settingsDialog');
+  settingsDialog.on('show.bs.modal', function (event) {
+    var settings_lists = document.getElementById("settings_lists");
+    settings_lists.innerHTML = '';
+    <? for(var list of board.properties.lists) { ?>
+    settings_lists.appendChild($(formatSettingsList("<?= list ?>", <?!= list == board.properties.list_entry ? "true" : "false" ?>, <?!= list == board.properties.list_exit ? "true" : "false" ?>))[0]);
+    <? } ?>
+    var settings_links = document.getElementById("settings_links");
+    settings_links.innerHTML = '';
+    <? for(var link of board.properties.links) { ?>
+    settings_links.appendChild($(formatSettingsLink("<?= link.label ?>","<?= link.url ?>"))[0]);
+    <? } ?>
+    document.getElementById("settings_list_name").value = '';
+    document.getElementById("settings_link_label").value = '';
+    document.getElementById("settings_link_url").value = '';
+    document.getElementById("settings_fit_columns").checked = <?!= board.properties.fit_columns ? "true" : "false" ?>;
+  });
+  settingsDialog.on('shown.bs.modal', function (event) {
+    document.getElementById('settings_list_name').focus();
+  });
+  $('.add-list-on-enter').keypress(function (event) {
+    if (event.keyCode == 13) {
+      event.preventDefault();
+      $('#settings_list_add').click();
+    }
+  });
+  $('.add-link-on-enter').keypress(function (event) {
+    if (event.keyCode == 13) {
+      event.preventDefault();
+      $('#settings_link_add').click();
+    }
+  });
+  $('.save-settings-on-ctrl-enter').keydown(function (event) {
+    if (event.keyCode == 13 && event.ctrlKey) {
+      event.preventDefault();
+      $('#settings_save').click();
+    }
+  });
+  $('.save-settings-on-ctrl-s').keydown(function (event) {
+    if (event.keyCode == 83 && event.ctrlKey) {
+      event.preventDefault();
+      $('#settings_save').click();
+    }
+  });
+  $('.reset-settings-on-ctrl-del').keydown(function (event) {
+    if (event.keyCode == 46 && event.ctrlKey) {
+      event.preventDefault();
+      $('#settings_reset').click();
+    }
+  });
+}
+
+function formatSettingsList(listName,is_entry,is_exit) {
+  var html = "";
+  html += '<li class="list-group-item';
+  if (is_entry) html += ' list-group-item-primary';
+  if (is_exit) html += ' list-group-item-success';
+  html += '">' + listName;
+  html += '<span class="float-right">';
+  html += '<input type=hidden value="'+listName+'">';
+  html += '<button type="button" class="btn btn-primary" onclick="settingsMarkEntry(\''+listName+'\');">Set as entry</button> ';
+  html += '<button type="button" class="btn btn-success" onclick="settingsMarkExit(\''+listName+'\');">Set as exit</button> ';
+  html += '<button type="button" class="btn btn-danger" aria-label="Close" onclick="settingsRemoveList(\''+listName+'\');">';
+  html += '<span aria-hidden="true">&times;</span>';
+  html += '</button>';
+  html += '</span>';
+  html += '</li>';
+  return html;
+}
+
+function formatSettingsLink(linkLabel,linkUrl) {
+  var html = "";
+  html += '<li class="list-group-item">' + linkLabel;
+  html += '<span class="float-right">';
+  html += '<input type=hidden value="'+linkLabel+'">';
+  html += '<input type=hidden value="'+linkUrl+'">';
+  html += '<button type="button" class="btn btn-danger" aria-label="Close" onclick="settingsRemoveLink(\''+linkLabel+'\');">';
+  html += '<span aria-hidden="true">&times;</span>';
+  html += '</button>';
+  html += '</span>';
+  html += '</li>';
+  return html;
+}
+
+function settingsAddList() {
+  var textbox = document.getElementById("settings_list_name");
+  if (!textbox.value) {
+    textbox.focus();
+    return alert('List name cannot be blank.');
+  }
+  var settings_lists = document.getElementById("settings_lists");
+  if (settingsOptionExists(settings_lists, textbox.value)) {
+    textbox.focus();
+    return alert('List name already exists.');
+  }
+  settings_lists.appendChild($(formatSettingsList(textbox.value))[0]);
+  textbox.value = "";
+  textbox.focus();
+}
+
+function settingsMarkEntry(listName) {
+  settingsUpdateMark(listName, "list-group-item-primary");
+}
+
+function settingsUpdateMark(listName,className) {
+  var settings_lists = document.getElementById("settings_lists");
+  var items = settings_lists.getElementsByTagName("li");
+  for (var item of items) {
+    if (item.getElementsByTagName("input")[0].value == listName) {
+      addClass(item, className);
+    } else {
+      removeClass(item, className);
+    }
+  }
+  document.getElementById("settings_list_name").focus();
+}
+
+function settingsOptionExists(parent,value) {
+  var match_value = value.toLowerCase();
+  var items = parent.getElementsByTagName("li");
+  for (var item of items) {
+    if (item.getElementsByTagName("input")[0].value.toLowerCase() == match_value) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function settingsMarkExit(listName) {
+  settingsUpdateMark(listName, "list-group-item-success");
+}
+
+function settingsRemoveList(listName) {
+  var settings_lists = document.getElementById("settings_lists");
+  var items = settings_lists.getElementsByTagName("li");
+  for (var item of items) {
+    if (item.getElementsByTagName("input")[0].value == listName) {
+      item.remove();
+      document.getElementById("settings_list_name").focus();
+      return;
+    }
+  }
+}
+
+function settingsAddLink() {
+  var text_name = document.getElementById("settings_link_label");
+  if (!text_name.value) {
+    text_name.focus();
+    return alert('Link name cannot be blank.');
+  }
+  var text_url = document.getElementById("settings_link_url");
+  if (!text_url.value) {
+    text_url.focus();
+    return alert('Link url cannot be blank.');
+  }
+  var settings_links = document.getElementById("settings_links");
+  if (settingsOptionExists(settings_links, text_name.value)) {
+    text_name.focus();
+    return alert('Link name already exists.');
+  }
+  settings_links.appendChild($(formatSettingsLink(text_name.value, text_url.value))[0]);
+  text_name.value = "";
+  text_url.value = "";
+  text_name.focus();
+}
+
+function settingsRemoveLink(linkName) {
+  var settings_links = document.getElementById("settings_links");
+  var items = settings_links.getElementsByTagName("li");
+  for (var item of items) {
+    if (item.getElementsByTagName("input")[0].value == linkName) {
+      item.remove();
+      document.getElementById("settings_link_label").focus();
+      return;
+    }
+  }
+}
+
+function saveSettingsDialogAsync() {
+  var lists = [];
+  var settings_lists = document.getElementById("settings_lists");
+  var items = settings_lists.getElementsByTagName("li");
+  var list_entry = "";
+  var list_exit = "";
+  for (var item of items) {
+    const listName = item.getElementsByTagName("input")[0].value;
+    lists.push(listName);
+    if (hasClass(item, "list-group-item-primary")) list_entry = listName;
+    if (hasClass(item, "list-group-item-success")) list_exit = listName;
+  }
+  var links = [];
+  var settings_links = document.getElementById("settings_links");
+  items = settings_links.getElementsByTagName("li");
+  for (var item of items) {
+    const inputs = item.getElementsByTagName("input");
+    links.push({
+      label: inputs[0].value,
+      url: inputs[1].value
+    });
+  }
+  var fit_columns = document.getElementById("settings_fit_columns").checked;
+  google.script.run.withSuccessHandler(saveSettingsSuccess).withFailureHandler(showError).saveBoardSettings("<?= board.id ?>",lists,list_entry,list_exit,links,fit_columns);
+  $('#settingsDialog').modal('hide');
+}
+
+function resetSettingsDialogAsync() {
+  if(!window.confirm("Are you sure you want to reset the board settings?")) return;
+  google.script.run.withSuccessHandler(saveSettingsSuccess).withFailureHandler(showError).resetBoardSettings("<?= board.id ?>");
+  $('#settingsDialog').modal('hide');
+}
+
+function saveSettingsSuccess(response) {
+  alert(response);
+  window.open('<?= ScriptApp.getService().getUrl() ?>?board=<?= board.title ?>','_top');
+}
+
+// load tasks
+
+function loadTasksAsync() {
+  var elements = document.getElementsByClassName("task");
+  for(const e of elements) {
+    addClass(e,"loading");
+  }
+  google.script.run.withSuccessHandler(loadTasksSuccess).withFailureHandler(showError).getAllTasks("<?= board.id ?>");
+}
+
+function loadTasksSuccess(tasks,optimistic) {
+  var eTask, eList, existing;
+  for(const task of tasks) {
+    existing = document.getElementById(task.id);
+    if (task.deleted && !optimistic) {
+      // shortcut to remove if confirmed delete
+      if(existing) existing.parentNode.removeChild(existing);
+      continue;
+    }
+    eTask = $(formatHtmlTask(task,optimistic))[0];
+    eList = document.getElementById(task.list);
+    if(eList) {
+      if(!existing && !optimistic) existing = matchNewTaskByData(task);
+      if(existing) {
+        if (existing.parentNode == eList) {
+          eList.replaceChild(eTask,existing);
+        } else {
+          existing.parentNode.removeChild(existing);
+          eList.appendChild(eTask);
+        }
+      } else {
+        eList.appendChild(eTask);
+      }
+    } else {
+      alert('Error loading task: List '+task.list+' not found.');
+    }
+  }
+  removeElementsByClass("loading");
+  updateFilter(); // calls updateDropzones() and updateTaskCount()
+}
+
+function matchNewTaskByData(task) {
+  const newTasks = document.getElementsByClassName("newtask");
+  for(const newTask of newTasks) {
+    const title = newTask.getElementsByClassName("task-title");
+    if (title && title.length==1 && title[0].innerHTML == escapeHtml(task.title)) {
+      const notes = newTask.getElementsByClassName("task-notes");
+      if (notes && notes.length==1 && notes[0].innerHTML == escapeHtml(formatHtmlNotes(task.notes))) {
+        const due = newTask.getElementsByClassName("task-due");
+        if (due && due.length==1 && due[0].innerHTML == formatHtmlDate(task.due)) {
+          //const links = newTask.getElementsByClassName("task-links");
+          //if (links && links.length==1 && links[0].innerHTML == formatHtmlLinks(task.links)) {
+            return newTask;
+          //}
+        }
+      }
+    }
+  }
+  return null;
+}
+
+// edit dialog
+
+function configureEditDialogEvents() {
+  var editDialog = $('#editDialog');
+  editDialog.on('show.bs.modal', function (event) {
+    var id = $(event.relatedTarget).data('id');
+    document.getElementById('edit_loading').style.display = "initial";
+    document.getElementById('edit_body').style.display = "none";
+    document.getElementById('edit_complete').style.display = "none";
+    document.getElementById('edit_delete').style.display = "none";
+    var edit_save = document.getElementById('edit_save');
+    edit_save.style.display = "initial";
+    edit_save.disabled = true;
+    if (id) {
+      // edit
+      document.getElementById('dialog_title').innerHTML = "Edit task";
+      edit_save.innerHTML = "Save changes";
+      google.script.run.withSuccessHandler(openEditDialogSuccess).withFailureHandler(openEditDialogFailure).getTask("<?= board.id ?>",id);
+    } else {
+      // add
+      var list = $(event.relatedTarget).data('list');
+      document.getElementById('dialog_title').innerHTML = "Add task";
+      edit_save.innerHTML = "Add new task";
+      openEditDialogSuccess({
+        id:"",
+        list:list,
+        title:"",
+        notes:""
+      });
+    }
+  });
+  editDialog.on('shown.bs.modal', function (event) {
+    document.getElementById('edit_title').focus();
+  });
+  $('.save-on-enter').keypress(function (event) {
+    if (event.keyCode == 13) {
+      event.preventDefault();
+      $('#edit_save').click();
+    }
+  });
+  $('.save-on-ctrl-enter').keydown(function (event) {
+    if (event.keyCode == 13 && event.ctrlKey) {
+      event.preventDefault();
+      $('#edit_save').click();
+    }
+  });
+  $('.save-on-ctrl-s').keydown(function (event) {
+    if (event.keyCode == 83 && event.ctrlKey) {
+      event.preventDefault();
+      $('#edit_save').click();
+    }
+  });
+  $('.done-on-ctrl-d').keydown(function (event) {
+    if (event.keyCode == 68 && event.ctrlKey) {
+      var button = $('#edit_complete:visible');
+      if(button) {
+        event.preventDefault();
+        button.click();
+      }
+    }
+  });
+  $('.del-on-ctrl-del').keydown(function (event) {
+    if (event.keyCode == 46 && event.ctrlKey) {
+      var button = $('#edit_delete:visible');
+      if(button) {
+        event.preventDefault();
+        button.click();
+      }
+    }
+  });
+}
+
+function openEditDialogSuccess(task) {
+  document.getElementById('edit_loading').style.display = "none";
+  document.getElementById('edit_body').style.display = "initial";
+  if(task.id) {
+    if(task.list != "<?= board.properties.list_exit ?>") {
+      document.getElementById('edit_complete').style.display = "initial";
+    }
+    document.getElementById('edit_delete').style.display = "initial";
+  }
+  document.getElementById('edit_save').disabled = false;
+  document.getElementById('edit_id').value = task.id;
+  document.getElementById('edit_list').value = task.list;
+  document.getElementById('edit_links').innerHTML = formatHtmlLinks(task.links);
+  document.getElementById('edit_notes').value = task.notes;
+  document.getElementById('edit_due').value = task.due;
+  var edit_title = document.getElementById('edit_title');
+  edit_title.value = task.title;
+  edit_title.focus();
+}
+
+function openEditDialogFailure(error) {
+  $('#editDialog').modal('hide');
+  showError(error);
+}
+
+function saveEditDialogAsync(action) {
+  var changes = {
+    id: document.getElementById('edit_id').value,
+    list: document.getElementById('edit_list').value,
+    title: document.getElementById('edit_title').value,
+    notes: document.getElementById('edit_notes').value,
+    due: document.getElementById('edit_due').value
+  };
+  if(!changes.title) {
+    alert('Task title cannot be blank.');
+    return;
+  }
+  if(changes.title.includes("<?= LIST_PREFIX ?>") || changes.title.includes("<?= LIST_SUFFIX ?>")) {
+    alert('Task title cannot include \'<?= LIST_PREFIX ?>\' or \'<?= LIST_SUFFIX ?>\'.');
+    return;
+  }
+  if(action=='delete') {
+    if(!window.confirm("Are you sure you want to delete '"+changes.title+"'?")) return;
+    changes.deleted = true;
+  } else if(action=='complete') {
+    changes.list = "<?= board.properties.list_exit ?>";
+  }
+  loadTasksSuccess([changes],true); // add/save (optimistically) in dom immediately, to be updated again on callback
+  if (changes.id) {
+    google.script.run.withSuccessHandler(updateTaskSuccess).withFailureHandler(updateTaskFailure).withUserObject(changes.id).editTask("<?= board.id ?>",changes);
+  } else {
+    google.script.run.withSuccessHandler(updateTaskSuccess).withFailureHandler(addTaskFailure).addTask("<?= board.id ?>",changes);
+  }
+  $('#editDialog').modal('hide');
+}
+
+function addTaskFailure(error) {
+  var newTasks = document.getElementsByClassName("newtask");
+  for(const newTask of newTasks) {
+    removeClass(newTask,"saving");
+    addClass(newTask,"not_saved");
+  }
+  showError(error);
+}
+
+function updateTaskSuccess(task,taskId) {
+  var ele = document.getElementById(taskId);
+  if(ele) removeClass(ele,"saving");
+  if(task) loadTasksSuccess([task]);
+}
+
+function updateTaskFailure(error,taskId) {
+  var ele = document.getElementById(taskId);
+  if(ele) {
+    removeClass(ele,"saving");
+    addClass(ele,"not_saved");
+  }
+  showError(error);
+}
+
+// clear tasks
+
+function clearCompletedAsync() {
+  if(!window.confirm("Are you sure you want to delete all visible completed tasks?")) return;
+  var list = document.getElementById("<?= board.properties.list_exit ?>");
+  var elements = list.getElementsByClassName("task");
+  var taskIds = [];
+  for(const e of elements) {
+    if (e.style.display != "none") {
+      addClass(e,"saving");
+      taskIds.push(e.id);
+    }
+  }
+  google.script.run.withSuccessHandler(clearCompletedSuccess).withFailureHandler(clearCompletedFailure).clearCompletedTasks("<?= board.id ?>", taskIds);
+}
+
+// on load
+
+window.addEventListener("load", loadTasksAsync);
+window.addEventListener("load", configureEditDialogEvents);
+window.addEventListener("load", configureSettingsDialogEvents);
+window.addEventListener("load", configureBoardEvents);
+window.addEventListener("load", focusFilter);
+</script>

@@ -1,0 +1,120 @@
+<?
+// inputs: ScriptApp
+//         board = taskList
+?>
+<script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
+<script>
+// helpers
+
+function hasClass(target, className) {
+    return new RegExp('(\\s|^)' + className + '(\\s|$)').test(target.className);
+}
+
+function addClass(ele,cls) {
+  if (!hasClass(ele,cls)) ele.className += " "+cls;
+}
+
+function removeClass(ele,cls) {
+  if (hasClass(ele,cls)) {
+    var reg = new RegExp('(\\s|^)'+cls+'(\\s|$)');
+    ele.className=ele.className.replace(reg,' ');
+  }
+}
+
+function openBoard(boardName) {
+  var url = "<?= ScriptApp.getService().getUrl() ?>";
+  var target = "taskban";
+  if (boardName) {
+    url += "?board="+boardName.replace(/ /g,"-");
+    target += '_'+boardName.replace(/ /g,"-");
+  }
+  <? if (board) { ?>
+  if (boardName=='<?= board.title ?>') target = "_top"
+  <? } else { ?>
+  if (boardName==null) target = "_top"
+  <? } ?>
+  window.open(url,target);
+}
+
+function showError(error) {
+  console.error(error);
+  alert(error);
+}
+
+// clear tasks
+
+function clearCompletedOnAllBoardsAsync() {
+  if(!window.confirm("Are you sure you want to delete ALL completed tasks on ANY board?")) return;
+  <? if (board) { ?>
+  var list = document.getElementById("<?= board.properties.list_exit ?>");
+  var elements = list.getElementsByClassName("task");
+  for(const e of elements) {
+    addClass(e,"saving");
+  }
+  <? } ?>
+  google.script.run.withSuccessHandler(clearCompletedSuccess).withFailureHandler(clearCompletedFailure).clearCompletedTasksOnAllBoards();
+  $('#boardList').modal('hide');
+}
+
+function clearCompletedSuccess() {
+  <? if (board) { ?>
+  var list = document.getElementById("<?= board.properties.list_exit ?>");
+  var elements = list.getElementsByClassName("task");
+  for(const e of elements) {
+    google.script.run.withSuccessHandler(updateTaskSuccess).withFailureHandler(updateTaskFailure).withUserObject(e.id).getTask("<?= board.id ?>", e.id);
+  }
+  <? } ?>
+}
+
+function clearCompletedFailure(error) {
+  <? if (board) { ?>
+  var list = document.getElementById("<?= board.properties.list_exit ?>");
+  var elements = list.getElementsByClassName("task");
+  for(const e of elements) {
+    removeClass(e,"saving");
+    addClass(e,"not_saved");
+  }
+  <? } ?>
+  showError(error);
+}
+
+// add new board
+
+function addNewBoardInteractive() {
+  var board = prompt("New board name:");
+  if (board) {
+    addNewBoardAsync(board);
+    $('#boardList').modal('hide');
+  }
+}
+
+function addNewBoardAsync(boardName) {
+  google.script.run.withSuccessHandler(addNewBoardSuccess).withFailureHandler(showError).addNewBoard(boardName);
+}
+
+function addNewBoardSuccess(board) {
+  openBoard(board.title);
+}
+
+// html formatting
+
+function getClassNameForDate(date_string) {
+  if(!date_string) return "";
+  var d = new Date(date_string);
+  var today = new Date();
+  today.setHours(0);
+  today.setMinutes(0);
+  today.setSeconds(0);
+  var tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate()+1);
+  if(d < tomorrow) {
+    if(d > today) {
+      return " due";
+    } else {
+      return " overdue";
+    }
+  }
+  return "";
+}
+</script>

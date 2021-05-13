@@ -1,0 +1,29 @@
+<?
+// inputs: board = taskList
+//         boards = [taskList]
+?>
+<div class="modal left fade toggle-board-list-on-tilda" id="boardList" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content sidebar">
+      <div class="modal-header sidebar">
+        <h5 class="modal-title" id="boardListLabel">Boards:</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+      </div>
+      <div class="modal-body" id="edit_body">
+        <ul>
+          <? for(var b of boards) { ?>
+          <? if(!board || b.id != board.id) { ?>
+          <li class="font-weight-light text-black"><button class="not-a-button btn-link" onclick="openBoard('<?= b.title ?>');"><?= b.title ?></button></li>
+          <? } ?>
+          <? } ?>
+        </ul>
+        <? if (board) { ?>
+        <p><button class="btn btn-link" onclick="openBoard('<?= board.title ?>');">Refresh this board</button></p>
+        <? } ?>
+        <p><button class="btn btn-success" onclick="clearCompletedOnAllBoardsAsync();">Clear completed on ALL boards</button></p>
+        <p><button class="btn btn-primary" onclick="addNewBoardInteractive();">Add new board</button></p>
+        <p><button class="btn btn-info" onclick="openBoard();"><?= board ? "Day by day summary" : "Refresh summary" ?></button></p>
+      </div>
+    </div>
+  </div>
+</div>

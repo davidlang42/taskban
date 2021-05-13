@@ -1,0 +1,151 @@
+<?
+// inputs: initial_date
+?>
+<script>
+var cache = {}; // formDate: tasks[]
+var minDate = new Date('<?= formatDateForm(initial_date) ?>');
+var daysToPreload = 7;
+
+function loadTasksAsync() {
+  var d = document.getElementById("summary_date").value;
+  var content = document.getElementById("accordion");
+  if (d) {
+    const cached_value = cache[d];
+    if (cached_value) {
+      content.innerHTML = cached_value;
+      preloadCache();
+    } else {
+      content.innerHTML = '<div class="loading">Loading...</div>';
+      google.script.run.withSuccessHandler(loadTasksSuccess).withUserObject(d).withFailureHandler(showError).getTasksByDate(d);
+    }
+  } else {
+    content.innerHTML = 'Please select a date.';
+  }
+}
+
+function formatDateForm(date_string) {
+  if(!date_string) return "";
+  var d = new Date(date_string);
+  return d.getFullYear()+"-"+digits(d.getMonth()+1,2)+"-"+digits(d.getDate(),2);
+}
+
+function loadTasksSuccess(tasks,date_string) {
+  var d = new Date(date_string);
+  var html = '<h5>'+d.toDateString()+'</h5>';
+  if (tasks && tasks.length) {
+    for (const task of tasks) {
+      html += formatHtmlTask(task);
+    }
+  } else {
+    html += "No tasks.";
+  }
+  if (date_string == document.getElementById("summary_date").value) {
+    document.getElementById("accordion").innerHTML = html;
+  }
+  cache[date_string] = html;
+  preloadCache();
+}
+
+function preloadCache() {
+  var d = document.getElementById("summary_date").value;
+  if (!d) return;
+  if (!cache[d]) {
+    cache[d] = '<div class="loading">Loading...</div>';
+    google.script.run.withSuccessHandler(loadTasksSuccess).withUserObject(d).getTasksByDate(d);
+  }
+  var dObj = new Date(d);
+  for (var i=1; i<=2*daysToPreload; i++) {
+    if (i % 2 == 0) {
+      dObj.setDate(dObj.getDate()-i); // -2,-4,-6,-8,-10,-12,-14
+    } else {
+      dObj.setDate(dObj.getDate()+i); // +1,+3,+5,+7,+9,+11,+13
+    }
+    d = formatDateForm(dObj); // relative to initial date: +1,-1,+2,-2,+3,-3 etc
+    if (!cache[d] && dObj >= minDate) {
+      cache[d] = '<div class="loading">Loading...</div>';
+      google.script.run.withSuccessHandler(loadTasksSuccess).withUserObject(d).getTasksByDate(d);
+    }
+  }
+}
+
+function changeDay(delta) {
+  var ele = document.getElementById("summary_date");
+  var d = new Date(ele.value);
+  d.setDate(d.getDate()+delta);
+  if (d < minDate) d = minDate;
+  ele.value = formatDateForm(d);
+  loadTasksAsync();
+}
+
+function digits(s,len) {
+  if(!s.length) s = s.toString();
+  while (s.length < len) {
+    s = "0"+s;
+  }
+  return s;
+}
+
+function formatHtmlTask(t) {
+  var html = '<div class="card">';
+  html += '<div class="card-header">';
+  html += '<h5 class="mb-0">';
+  html += '<button class="btn btn-link'+getClassNameForDate(t.due)+'" data-toggle="collapse" data-target="#'+uniqueId(t.board.id,t.id)+'">';
+  html += t.title;
+  html += '</button>';
+  html += '</h5>';
+  html += '</div>';
+  html += '<div id="'+uniqueId(t.board.id,t.id)+'" class="collapse" data-parent="#accordion">';
+  html += '<div class="card-body">';
+  html += '<button type="button" class="btn btn-primary" onClick="openBoard(\''+t.board.title+'\');">'+t.board.title+'</button> ';
+  html += '<button type="button" class="btn btn-success" onClick="markComplete(\''+t.board.id+'\',\''+t.id+'\',\''+t.board.properties.list_exit+'\');">Mark as complete</button> ';
+  html += '<button type="button" class="btn btn-warning" onClick="removeDueDate(\''+t.board.id+'\',\''+t.id+'\');">Remove due date</button> ';
+  html += '<select onchange="changeList(\''+t.board.id+'\',\''+t.id+'\',this.value);">';
+  for(var list of t.board.properties.lists) {
+    html += '<option value="'+list+'"';
+    if (t.list == list) html += " selected";
+    html += '>'+list+'</option>';
+  }
+  html += '</select>';
+  html += '</div>';
+  html += '</div>';
+  html += '</div>';
+  return html;
+}
+
+function removeDueDate(boardId, taskId) {
+  var changes = {
+    id: taskId,
+    due: ""
+  };
+  google.script.run.withFailureHandler(showError).updateTask(boardId,changes);
+  var ele = document.getElementById(uniqueId(boardId,taskId)).parentNode;
+  ele.parentNode.removeChild(ele); // optimistically remove
+  updateCurrentCache();
+}
+
+function updateCurrentCache() {
+  var d = document.getElementById("summary_date").value;
+  cache[d] = document.getElementById("accordion").innerHTML;
+}
+
+function clearCurrentCache() {
+  var d = document.getElementById("summary_date").value;
+  cache[d] = null;
+}
+
+function markComplete(boardId, taskId, listToComplete) {
+  google.script.run.withFailureHandler(showError).moveTask(boardId, taskId, listToComplete);
+  var ele = document.getElementById(uniqueId(boardId,taskId)).parentNode;
+  ele.parentNode.removeChild(ele); // optimistically remove
+  updateCurrentCache();
+}
+
+function changeList(boardId, taskId, listName) {
+  clearCurrentCache(); // otherwise the current cache will show the incorrect list if reloaded
+  google.script.run.withFailureHandler(showError).withSuccessHandler(preloadCache).moveTask(boardId, taskId, listName); // on return preloadCache will reload the current day
+}
+
+function uniqueId(boardId,taskId) {
+  return boardId + taskId;
+}
+</script>

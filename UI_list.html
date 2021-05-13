@@ -1,0 +1,27 @@
+<?
+// based on: https://getbootstrap.com/docs/4.0/components/collapse/
+// inputs: initial_date, boards
+?>
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <?!= include("JS_common",{board: null}) ?>
+    <?!= include("JS_list",{initial_date: initial_date}) ?>
+    <?!= include("CSS_common",{board: null}) ?>
+  </head>
+  <body onload="loadTasksAsync()">
+    <!-- Summary list -->
+    <div class="container-fluid pt-3" style="background-color: white;">
+      <h3 class="font-weight-light text-black" data-toggle="modal" data-target="#boardList" id="toggle_board_list" style="display:inline;">TaskBan Summary</h3>
+      <button class="btn btn-primary btn-sm float-right" onClick="clearCurrentCache();loadTasksAsync();">🔄</button>
+      <p><input type="date" id="summary_date" value="<?= formatDateForm(initial_date) ?>" min="<?= formatDateForm(initial_date) ?>" onchange="loadTasksAsync()">
+      <button type="button" class="float-right btn btn-dark" onclick="changeDay(1)">Next</button>
+      <button type="button" class="float-right btn btn-light" onclick="changeDay(-1)">Prev</button></p>
+      <div id="accordion">
+      </div>
+    </div>
+    <!-- Sidebar -->
+    <?!= include("UI_sidebar",{boards: boards, board: null}) ?>
+  </body>
+</html>

@@ -1,0 +1,221 @@
+<?
+// inputs: board = taskList
+?>
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+<style>
+.not-a-button {
+    border: none;
+    outline: none;
+    background-color: white;
+}
+
+.card.draggable {
+    margin-bottom: 1rem;
+    cursor: grab;
+}
+
+.droppable {
+    background-color: var(--success);
+    min-height: 120px;
+    margin-bottom: 1rem;
+}
+
+.saving {
+    color: blue;
+}
+
+.not_saved {
+    color: red;
+}
+
+.loading {
+    color: orange;
+}
+
+.deleted {
+    text-decoration: line-through;
+}
+
+.list_exit :not(.dropzone) :not(.loading) :not(.saving) {
+    color: green;
+    font-weight: inherit;
+    text-decoration: line-through;
+}
+
+// .list_entry { }
+
+.due {
+    font-weight: bold;
+}
+
+.overdue {
+    color: red;
+    font-weight: bold;
+}
+
+.list-group-item-primary .btn,
+.list-group-item-success .btn {
+    display: none;
+}
+
+.list-border > div {
+    padding-right: 5px
+}
+
+.list-border {
+    padding-right: 15px; // default was 20px
+}
+
+<? if(board && board.properties.lists.length) { ?>
+.col-fit {
+    -ms-flex: 0 0 <?= 100/board.properties.lists.length ?>%;
+    flex: 0 0 <?= 100/board.properties.lists.length ?>%;
+    max-width: <?= 100/board.properties.lists.length ?>%;
+}
+<? } ?>
+
+// source: https://codepen.io/devstreak/pen/dMYgeO
+
+.items::-webkit-scrollbar-track
+{
+	-webkit-box-shadow: inset 0 0 3px rgba(0,0,0,0.3);
+	background-color: #F5F5F5;
+}
+
+.items::-webkit-scrollbar
+{
+	width: 3px;
+	background-color: #F5F5F5;
+}
+
+.items::-webkit-scrollbar-thumb
+{
+	background-color: #AAAAAA;
+}
+
+// source: https://codepen.io/bootpen/pen/jbbaRa
+	.modal.left .modal-dialog,
+	.modal.right .modal-dialog {
+		position: fixed;
+		margin: auto;
+		width: 320px;
+		height: 100%;
+		-webkit-transform: translate3d(0%, 0, 0);
+		    -ms-transform: translate3d(0%, 0, 0);
+		     -o-transform: translate3d(0%, 0, 0);
+		        transform: translate3d(0%, 0, 0);
+	}
+
+	.modal.left .modal-content,
+	.modal.right .modal-content {
+		height: 100%;
+		overflow-y: auto;
+	}
+	
+	.modal.left .modal-body,
+	.modal.right .modal-body {
+		padding: 15px 15px 80px;
+	}
+
+/*Left*/
+	.modal.left.fade .modal-dialog{
+		left: 0px;
+		-webkit-transition: opacity 0.3s linear, left 0.3s ease-out;
+		   -moz-transition: opacity 0.3s linear, left 0.3s ease-out;
+		     -o-transition: opacity 0.3s linear, left 0.3s ease-out;
+		        transition: opacity 0.3s linear, left 0.3s ease-out;
+	}
+	
+	.modal.left.fade.in .modal-dialog{
+		left: 0px;
+	}
+    
+/*Right*/
+	.modal.right.fade .modal-dialog {
+		right: -320px;
+		-webkit-transition: opacity 0.3s linear, right 0.3s ease-out;
+		   -moz-transition: opacity 0.3s linear, right 0.3s ease-out;
+		     -o-transition: opacity 0.3s linear, right 0.3s ease-out;
+		        transition: opacity 0.3s linear, right 0.3s ease-out;
+	}
+	
+	.modal.right.fade.in .modal-dialog {
+		right: 0;
+	}
+    
+/* ----- MODAL STYLE ----- */
+	.modal-content.sidebar {
+		border-radius: 0;
+		border: none;
+	}
+
+	.modal-header.sidebar {
+		border-bottom-color: #EEEEEE;
+		background-color: #FAFAFA;
+	}
+
+// source: https://www.w3schools.com/howto/howto_css_switch.asp
+
+/* The switch - the box around the slider */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 60px;
+  height: 34px;
+}
+
+/* Hide default HTML checkbox */
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+/* The slider */
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  -webkit-transition: .4s;
+  transition: .4s;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 26px;
+  width: 26px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  -webkit-transition: .4s;
+  transition: .4s;
+}
+
+input:checked + .slider {
+  background-color: #2196F3;
+}
+
+input:focus + .slider {
+  box-shadow: 0 0 1px #2196F3;
+}
+
+input:checked + .slider:before {
+  -webkit-transform: translateX(26px);
+  -ms-transform: translateX(26px);
+  transform: translateX(26px);
+}
+
+/* Rounded sliders */
+.slider.round {
+  border-radius: 34px;
+}
+
+.slider.round:before {
+  border-radius: 50%;
+}
+</style>

@@ -1,0 +1,134 @@
+<?
+// based on: https://www.codeply.com/go/YEFHXEnn0v/bootstrap-kanban
+// inputs: board = taskList
+//         boards = [taskList]
+//         devMode = boolean
+?>
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <?!= include("JS_common",{board: board}) ?>
+    <?!= include("JS_board",{board: board}) ?>
+    <?!= include("CSS_common",{board: board}) ?>
+  </head>
+  <body onbeforeunload="if(confirmLeave()) return confirmLeave()" class="board-shortcut-keys">
+    <!-- Kanban board -->
+    <nav class="navbar navbar-expand-lg navbar-light container-fluid sticky-top position-fixed" style="background-color: white;">
+      <h3 class="font-weight-light text-black" style="display: inline-block;" data-toggle="modal" data-target="#boardList" id="toggle_board_list"><?= board.title ?></h3>&nbsp;&nbsp;&nbsp;
+      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <ul class="navbar-nav mr-auto">
+          <? for (const link of board.properties.links) { ?>
+          <li class="nav-item">
+            <a class="nav-link btns" onclick="window.open('<?= link.url ?>','_blank');"><?= link.label ?></a>
+          </li>
+          <? } ?>
+        </ul>
+        <div class="form-inline my-2 my-lg-0">
+          <input class="form-control mr-sm-2" type=textbox id="filter_text" placeholder="Filter text" onKeyUp='updateFilter();'>
+          <button class="btn btn-primary btn-sm my-2 my-sm-0" id="button_details" onClick="toggleDetails(this);">Hide details</button>&nbsp;
+          <button class="btn btn-primary btn-sm my-2 my-sm-0" onClick="loadTasksAsync();">🔄</button>&nbsp;
+          <button class="btn btn-primary btn-sm my-2 my-sm-0" data-toggle="modal" data-target="#settingsDialog">⚙️</button>
+        </div>
+      </div>
+    </nav>
+    <div class="container-fluid pt-5">
+        <div class="row flex-row flex-nowrap py-3">
+            <? for(var list of board.properties.lists) { ?>
+            <div class="col-12 col-sm-6 col-md-4<?= board.properties.lists.length > 3 ? " col-lg-3" : "" ?><?= board.properties.lists.length >= 6 ? " col-xl-2" : "" ?><?= board.properties.fit_columns ? " col-fit" : "" ?>">
+                <div class="card bg-light">
+                    <div class="list-border card-body">
+                        <div>
+                        <h6 class="card-title text-uppercase text-truncate py-2" style="display: inline-block;"><?= list ?></h6>
+                        <? if (list == board.properties.list_exit) { ?>
+                        <button type="button" class="btn btn-success float-right" id="exit_clear" onClick="clearCompletedAsync();">Clear</button>
+                        <? } else { ?>
+                        <button class="btn btn-<?= list == board.properties.list_entry ? "primary" : "secondary" ?> btn-sm float-right" data-toggle="modal" data-target="#editDialog" data-list="<?= list ?>"<?!= list == board.properties.list_entry ? ' id="add_to_list_entry"' : '' ?>>+</button>
+                        <? } ?>
+                        </div>
+                        <div class="items border border-light overflow-auto<?= list == board.properties.list_entry ? " list_entry" : "" ?><?= list == board.properties.list_exit ? " list_exit" : "" ?>" id="<?= list ?>" style="max-height: calc(100vh - 200px);">
+                            <div class="loading">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <? } ?>
+        </div>
+    </div>
+    <!-- Edit dialog -->
+    <div class="modal fade" id="editDialog" tabindex="-1" role="dialog" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="dialog_title"></h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body" id="edit_loading">Loading...</div>
+          <div class="modal-body" id="edit_body">
+            <input type="hidden" id="edit_id">
+            <p>Title:<br><input type="text" id="edit_title" class="form-control save-on-enter save-on-ctrl-enter save-on-ctrl-s done-on-ctrl-d del-on-ctrl-del"></p>
+            <p>Notes:<br><textarea id="edit_notes" rows="8" cols="60" style="resize: none;" class="form-control save-on-ctrl-enter save-on-ctrl-s done-on-ctrl-d del-on-ctrl-del"></textarea></p>
+            <p id="edit_links"></p>
+            <div><span>Due: &nbsp;&nbsp;<input type="date" id="edit_due" class="save-on-enter save-on-ctrl-enter save-on-ctrl-s done-on-ctrl-d del-on-ctrl-del"></span>
+            <span class="float-right"><select id="edit_list" class="save-on-enter save-on-ctrl-enter save-on-ctrl-s done-on-ctrl-d del-on-ctrl-del">
+            <? for(var list of board.properties.lists) { ?>
+            <option value="<?= list ?>"><?= list ?></option>
+            <? } ?>
+            </select></span></div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-danger" id="edit_delete" onClick="saveEditDialogAsync('delete');">Delete</button>
+            <button type="button" class="btn btn-success" id="edit_complete" onClick="saveEditDialogAsync('complete');">Mark as complete</button>
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-primary" id="edit_save" onClick="saveEditDialogAsync();"></button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Sidebar -->
+    <?!= include("UI_sidebar",{boards: boards, board: board}) ?>
+    <!-- Settings dialog -->
+    <div class="modal fade" id="settingsDialog" tabindex="-1" role="dialog" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Edit board settings</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <h6>Lists:</h6>
+            <ul id="settings_lists" class="list-group"></ul>
+            <br><p><input type=textbox id="settings_list_name" style="width:85%" placeholder="New list name" class="add-list-on-enter save-settings-on-ctrl-enter save-settings-on-ctrl-s reset-settings-on-ctrl-del">
+            <button type="button" class="btn btn-dark float-right" id="settings_list_add" onclick="settingsAddList();">Add</button></p>
+          </div>
+          <div class="modal-body">
+            <h6>Links:</h6>
+            <ul id="settings_links" class="list-group"></ul>
+            <br><p><input type=textbox id="settings_link_label" style="width:25%" placeholder="New link label" class="add-link-on-enter save-settings-on-ctrl-enter save-settings-on-ctrl-s reset-settings-on-ctrl-del">
+            <input type=textbox id="settings_link_url" style="width:60%" placeholder="New link url" class="add-link-on-enter save-settings-on-ctrl-enter save-settings-on-ctrl-s reset-settings-on-ctrl-del">
+            <button type="button" class="btn btn-dark float-right" id="settings_link_add" onclick="settingsAddLink();">Add</button></p>
+          </div>
+          <div class="modal-body">
+            Force fit all columns to screen width
+            <label class="switch float-right">
+              <input type="checkbox" id="settings_fit_columns">
+              <span class="slider round"></span>
+            </label>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-danger" id="settings_reset" onClick="resetSettingsDialogAsync();">Reset to default</button>
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-primary" id="settings_save" onClick="saveSettingsDialogAsync();">Save settings</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
