@@ -13,3 +13,8 @@ A kanban-style view of your Google Tasks.
 * Find existing deployment: `clasp deployments`
   * Returns deployment id: `AKfycbxSDJouDbOKVTQ3cnnGaJaLW5EbR86YRTwCX-PJb7Mvua9egDM @58 - Test via Clasp`
 * Create version & update existing deployment: `clasp deploy -i [deploymentId] -d "[description]"`
+
+## Hardcoded details
+The sidebar add-on (for Gmail, Calendar, etc) contains links to the main TaskBan app, therefore the deployed url is hardcoded in the following places:
+* Add-on.js `const PROD_URL`
+* appsscript.json `addOns.common.universalActions.openLink`
