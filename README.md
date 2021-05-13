@@ -5,7 +5,8 @@ The tasks are only stored in Google Tasks, no duplication/syncing takes place. B
 There is a small amount of metadata stored in the Google Apps Script Properties Service, but this is also per user.
 
 Hosted directly on Google Apps Script, free for anyone to use: https://taskban.davidlang.net
-But by all means, buy me a coffee. <a href='https://ko-fi.com/K3K21PCIK' target='_blank'><img height='36' style='border:0px;height:36px;' src='https://cdn.ko-fi.com/cdn/kofi2.png?v=2' border='0' alt='Buy Me a Coffee at ko-fi.com' /></a>
+
+But by all means, [buy me a coffee](https://ko-fi.com/K3K21PCIK).
 
 ## Set up local repo
 * Clone git repo: `git clone https://github.com/davidlang42/taskban.git`
