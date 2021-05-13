@@ -11,5 +11,5 @@ A kanban-style view of your Google Tasks.
 * Pull changes to local git repo: `git pull`
 * Push changes to apps scripts: `clasp push`
 * Find existing deployment: `clasp deployments`
-  * Returns deployment id: `AKfycbxSDJouDbOKVTQ3cnnGaJaLW5EbR86YRTwCX-PJb7Mvua9egDM @56`
+  * Returns deployment id: `AKfycbxSDJouDbOKVTQ3cnnGaJaLW5EbR86YRTwCX-PJb7Mvua9egDM @58 - Test via Clasp`
 * Create version & update existing deployment: `clasp deploy -i [deploymentId] -d "[description]"`
