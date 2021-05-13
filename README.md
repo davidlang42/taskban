@@ -1,6 +1,13 @@
 # TaskBan
 A kanban-style view of your Google Tasks.
 
+The tasks are only stored in Google Tasks, no duplication/syncing takes place. Because of this it is a single user experience.
+There is a small amount of metadata stored in the Google Apps Script Properties Service, but this is also per user.
+
+Hosted directly on Google Apps Script, free for anyone to use: https://taskban.davidlang.net
+But by all means, buy me a coffee.
+<script type='text/javascript' src='https://storage.ko-fi.com/cdn/widget/Widget_2.js'></script><script type='text/javascript'>kofiwidget2.init('Buy Me a Ko-fi', '#29abe0', 'K3K21PCIK');kofiwidget2.draw();</script> 
+
 ## Set up local repo
 * Clone git repo: `git clone https://github.com/davidlang42/taskban.git`
 * Install [clasp](https://developers.google.com/apps-script/guides/clasp): `npm install @google/clasp -g`
