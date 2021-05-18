@@ -9,7 +9,7 @@ function buildBoardList() {
   const boards = listBoards();
   const section = CardService.newCardSection();
   for (const board of boards) {
-    const url = PROD_URL+board.title.replace(/ /g,"-");
+    const url = PROD_URL+"?b="+board.title.replace(/ /g,"-");
     const link = CardService.newOpenLink()
       .setUrl(url)
       .setOpenAs(CardService.OpenAs.OVERLAY);

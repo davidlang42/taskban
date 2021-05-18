@@ -6,7 +6,7 @@ const ESSENTIAL_NOTES_DELIMETER = "///";
 const SHOW_DETAILS_THRESHOLD = 5;
 
 // URL also hardcoded in appsscript.json
-const PROD_URL = "https://taskban.davidlang.net/?b="; // ScriptApp.getService().getUrl()+"?board="
+const PROD_URL = "https://taskban.davidlang.net/"; // ScriptApp.getService().getUrl()+"?board="
 
 function doGet(e) {
   var boardName = e.parameter.board;
@@ -16,7 +16,7 @@ function doGet(e) {
     if (boardName.startsWith("/")) boardName = boardName.substring(1);
     const board = findBoard(boardName, boards);
     if (board) return uiBoard(board, boards);
-    return redirect(ScriptApp.getService().getUrl());
+    return redirect(PROD_URL);
   }
   return uiList(new Date(), boards);
 }

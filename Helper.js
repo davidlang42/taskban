@@ -12,7 +12,7 @@ function include(filename,objects) {
 
 function redirect(url) {
   var html = "<script>window.open('"+url+"','_self');</script>";
-  return HtmlService.createHtmlOutput(html);
+  return HtmlService.createHtmlOutput(html).setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 
 function getFaviconUrl() {
