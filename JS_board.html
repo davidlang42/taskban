@@ -505,7 +505,7 @@ function resetSettingsDialogAsync() {
 
 function saveSettingsSuccess(response) {
   alert(response);
-  window.open('<?= ScriptApp.getService().getUrl() ?>?board=<?= board.title ?>','_top');
+  window.open('<?= ScriptApp.getService().getUrl() ?>?board=<?= board.title ?>','_self');
 }
 
 // load tasks

@@ -1,5 +1,3 @@
-const PROD_URL = "https://script.google.com/macros/s/AKfycbxSDJouDbOKVTQ3cnnGaJaLW5EbR86YRTwCX-PJb7Mvua9egDM/exec"; // also hardcoded in appsscript.json
-
 function onHomepage(e) {
   const card = CardService.newCardBuilder();
   card.addSection(buildBoardList());
@@ -11,7 +9,7 @@ function buildBoardList() {
   const boards = listBoards();
   const section = CardService.newCardSection();
   for (const board of boards) {
-    const url = PROD_URL+"?board="+board.title.replace(/ /g,"-");
+    const url = PROD_URL+board.title.replace(/ /g,"-");
     const link = CardService.newOpenLink()
       .setUrl(url)
       .setOpenAs(CardService.OpenAs.OVERLAY);

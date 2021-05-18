@@ -11,7 +11,7 @@ function include(filename,objects) {
 }
 
 function redirect(url) {
-  var html = "<script>window.open('"+url+"','_top');</script>";
+  var html = "<script>window.open('"+url+"','_self');</script>";
   return HtmlService.createHtmlOutput(html);
 }
 

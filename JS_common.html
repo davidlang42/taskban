@@ -23,16 +23,16 @@ function removeClass(ele,cls) {
 }
 
 function openBoard(boardName) {
-  var url = "<?= ScriptApp.getService().getUrl() ?>";
+  var url = "<?= PROD_URL ?>";
   var target = "taskban";
   if (boardName) {
-    url += "?board="+boardName.replace(/ /g,"-");
+    url += boardName.replace(/ /g,"-");
     target += '_'+boardName.replace(/ /g,"-");
   }
   <? if (board) { ?>
-  if (boardName=='<?= board.title ?>') target = "_top"
+  if (boardName=='<?= board.title ?>') target = "_self"
   <? } else { ?>
-  if (boardName==null) target = "_top"
+  if (boardName==null) target = "_self"
   <? } ?>
   window.open(url,target);
 }
