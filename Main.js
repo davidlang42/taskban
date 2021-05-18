@@ -9,7 +9,8 @@ const SHOW_DETAILS_THRESHOLD = 5;
 const PROD_URL = "https://taskban.davidlang.net/?b="; // ScriptApp.getService().getUrl()+"?board="
 
 function doGet(e) {
-  var boardName = e.parameter.board ?? e.parameter.b;
+  var boardName = e.parameter.board;
+  if (!boardName) boardName = e.parameter.b;
   const boards = listBoards();
   if (boardName) {
     if (boardName.startsWith("/")) boardName = boardName.substring(1);
