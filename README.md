@@ -23,5 +23,5 @@ But by all means, [buy me a coffee](https://ko-fi.com/davidlang42).
 
 ## Hardcoded details
 The sidebar add-on (for Gmail, Calendar, etc) contains links to the main TaskBan app, therefore the deployed url is hardcoded in the following places:
-* Add-on.js `const PROD_URL`
+* Main.js `const PROD_URL`
 * appsscript.json `addOns.common.universalActions.openLink`
