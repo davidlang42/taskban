@@ -5,7 +5,7 @@ The tasks are only stored in Google Tasks, no duplication/syncing takes place. B
 There is a small amount of metadata stored in the Google Apps Script Properties Service, but this is also per user.
 
 Hosted directly on Google Apps Script, free for anyone to use: https://taskban.davidlang.net
-Optional static html hosted on my home server to make the frame/url look nice.
+(with optional static html iframe hosted on my home server to make the url look nice)
 
 But by all means, [buy me a coffee](https://ko-fi.com/davidlang42).
 
@@ -25,6 +25,9 @@ But by all means, [buy me a coffee](https://ko-fi.com/davidlang42).
 * Create version & update existing deployment: `clasp deploy -i [deploymentId] -d "[description]"`
 
 ## Hardcoded details
-The sidebar add-on (for Gmail, Calendar, etc) contains links to the main TaskBan app, therefore the deployed url is hardcoded in the following places:
-* Main.js `const PROD_URL`
+The sidebar add-on (for Gmail, Calendar, etc) contains links to the main TaskBan app, therefore the url is hardcoded in the following places:
+* Main.js `const INTERNAL_URL`
 * appsscript.json `addOns.common.universalActions.openLink`
+* frame.html `const EXTERNAL_URL`
+* frame.html `const APP_SCRIPT_URL`
+* index.html `const APP_SCRIPT_URL`

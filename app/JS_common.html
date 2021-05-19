@@ -23,7 +23,7 @@ function removeClass(ele,cls) {
 }
 
 function openBoard(boardName) {
-  var url = "<?= PROD_URL ?>?b=";
+  var url = "<?= INTERNAL_URL ?>?b=";
   var target = "taskban";
   if (boardName) {
     url += boardName.replace(/ /g,"-");
