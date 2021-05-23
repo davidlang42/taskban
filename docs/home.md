@@ -5,7 +5,7 @@ The tasks are only stored in Google Tasks, no duplication/syncing takes place. B
 There is a small amount of metadata stored in the Google Apps Script Properties Service, but this is also per user.
 
 Hosted directly on Google Apps Script, free for anyone to use: [https://taskban.davidlang.net](https://taskban.davidlang.net)
-(with optional static html iframe hosted on my home server to make the url look nice)
+(with optional static html iframe hosted on GitHub Pages to make the url look nice)
 
 But by all means, [buy me a coffee](https://ko-fi.com/davidlang42).
 
