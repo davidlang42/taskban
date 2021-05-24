@@ -16,12 +16,15 @@ But by all means, [buy me a coffee](https://ko-fi.com/davidlang42).
 * Enter app directory: `cd app`
 * Connect apps script project: `clasp clone [scriptId]`
 
-## Publishing changes
+## Deploying changes
+### Use bash script
+* Run from the root of the repo: `./deploy.sh`
+### Execute manually
 * Enter app directory: `cd app`
 * Pull changes to local git repo: `git pull`
 * Push changes to apps scripts: `clasp push`
 * Find existing deployment: `clasp deployments`
-  * Returns deployment id: `AKfycbxSDJouDbOKVTQ3cnnGaJaLW5EbR86YRTwCX-PJb7Mvua9egDM @58 - Test via Clasp`
+  * Returns deployment id: `- AKfycbxSDJouDbOKVTQ3cnnGaJaLW5EbR86YRTwCX-PJb7Mvua9egDM @58 - Test via Clasp`
 * Create version & update existing deployment: `clasp deploy -i [deploymentId] -d "[description]"`
 
 ## Hardcoded details
@@ -31,3 +34,14 @@ The sidebar add-on (for Gmail, Calendar, etc) contains links to the main TaskBan
 * frame.html `const EXTERNAL_URL`
 * frame.html `const APP_SCRIPT_URL`
 * index.html `const APP_SCRIPT_URL`
+
+## Future features:
+* Markdown formatting
+* Progressive Web App
+* Save changes warning (when closing add/edit dialog)
+* Task pre-requisites
+* Remove due dates button (in done column & add-on)
+* Task ordering
+* Subtask support
+* Wrong list dialog (for tasks with a list that doesn't exist)
+* Snap scroll to list
