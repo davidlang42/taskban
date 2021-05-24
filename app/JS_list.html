@@ -89,7 +89,7 @@ function formatHtmlTask(t) {
   var html = '<div class="card">';
   html += '<div class="card-header">';
   html += '<h5 class="mb-0">';
-  html += '<button class="btn btn-link'+getClassNameForDate(t.due)+'" data-toggle="collapse" data-target="#'+uniqueId(t.board.id,t.id)+'">';
+  html += '<button class="btn btn-link'+getClassNameForDate(t.due)+'" data-toggle="collapse" data-target="#'+uniqueId(t.board.id,t.id)+'" style="text-align: left">';
   html += t.title;
   html += '</button>';
   html += '</h5>';
