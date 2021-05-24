@@ -1,6 +1,4 @@
-// Future tasks/issues on github: https://github.com/davidlang42/taskban
-
-const TITLE_SUFFIX = " :: TaskBan";
+const TITLE_SUFFIX = " :: TaskBan"; // also in frame.html
 const TRUNCATE_NOTES_LENGTH = 150;
 const ESSENTIAL_NOTES_DELIMETER = "///";
 const SHOW_DETAILS_THRESHOLD = 5;
@@ -9,18 +7,23 @@ const SHOW_DETAILS_THRESHOLD = 5;
 const INTERNAL_URL = "https://taskban.davidlang.net/frame.html"; // URL also hardcoded in appsscript.json
 
 function doGet(e) {
-  var redirectBoard = e.parameter.redirect;
-  if (redirectBoard === "") return redirect(INTERNAL_URL);
-  if (redirectBoard) return redirect(INTERNAL_URL + "?b=" + redirectBoard);
-  var boardName = e.parameter.board;
-  if (!boardName) boardName = e.parameter.b;
+  if (e.parameter.redirect === "") return redirect(INTERNAL_URL); // short circuit for speed
   const boards = listBoards();
+  var boardName = e.parameter.board || e.parameter.b || e.parameter.redirect;
   if (boardName) {
     if (boardName.startsWith("/")) boardName = boardName.substring(1);
     const board = findBoard(boardName, boards);
-    if (board) return uiBoard(board, boards);
+    if (board) {
+      if (e.parameter.redirect)
+        return redirect(INTERNAL_URL + "?b=" + board.title.replace(/ /g,"-"));
+      else
+        return uiBoard(board, boards);
+    }
   }
-  return uiList(new Date(), boards);
+  if (e.parameter.redirect)
+    return redirect(INTERNAL_URL);
+  else
+    return uiList(new Date(), boards);
 }
 
 function uiBoard(board, boards) {
