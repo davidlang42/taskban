@@ -9,7 +9,7 @@ const TITLE_SUFFIX = " :: TaskBan"; // also in Main.js
 document.getElementById('full_frame').src = APPS_SCRIPT_URL + window.location.search;
 const p = new URLSearchParams(window.location.search);
 const b = p.get('board') ?? p.get('b');
-if (b) document.title = TITLE_SUFFIX + b.replace(/-/g,' ');
-else document.title = "Summary :: TaskBan";
+if (b) document.title = b.replace(/-/g,' ') + TITLE_SUFFIX;
+else document.title = "Summary" + TITLE_SUFFIX;
 window.history.replaceState({}, null, EXTERNAL_URL + window.location.search);
 </script>
