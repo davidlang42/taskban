@@ -5,10 +5,11 @@
 <script>
 const EXTERNAL_URL = "https://taskban.davidlang.net/";
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxSDJouDbOKVTQ3cnnGaJaLW5EbR86YRTwCX-PJb7Mvua9egDM/exec";
+const TITLE_SUFFIX = " :: TaskBan"; // also in Main.js
 document.getElementById('full_frame').src = APPS_SCRIPT_URL + window.location.search;
 const p = new URLSearchParams(window.location.search);
 const b = p.get('board') ?? p.get('b');
-if (b) document.title = "TaskBan :: " + b.replace(/-/g,' ');
+if (b) document.title = TITLE_SUFFIX + b.replace(/-/g,' ');
 else document.title = "Summary :: TaskBan";
 window.history.replaceState({}, null, EXTERNAL_URL + window.location.search);
 </script>
