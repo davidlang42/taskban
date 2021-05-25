@@ -9,6 +9,26 @@ It will be shown on a TaskBan board like this:
 
 ![TaskBan](images/TaskBan.png)
 
+You can type into the filter box in the top right corner to only show tasks containing specific text.
+
+![Filters](images/TaskBan-Filter.png)
+
+Or click on a task to open an edit dialog.
+
+![Edit Dialog](images/TaskBan-Edit.png)
+
+To change between different boards, click the heading in the top left corner to show the sidebar menu.
+
+![Sidebar Menu](images/TaskBan-BoardList.png)
+
+You can customise the columns for each board by clicking the gear icon in the top right corner.
+
+![Settings](images/TaskBan-Settings.png)
+
+Thats all there is to it! Happy task'ing.
+
+## Fine print
+
 The tasks are only stored in Google Tasks, no duplication/syncing takes place. Because of this it is a single user experience.
 There is a small amount of metadata stored in the Google Apps Script Properties Service, but this is also per user.
 * Read more on the [privacy](privacy.md) and [terms of service](terms.md) pages.
