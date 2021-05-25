@@ -2,8 +2,11 @@
 A kanban-style view of your Google Tasks. Each "list" in Google Tasks is shown as a "board" in TaskBan.
 
 For example, if your Google Tasks list looks like this:
+
 ![Google Tasks](images/GoogleTasks.png)
+
 It will be shown on a TaskBan board like this:
+
 ![TaskBan](images/TaskBan.png)
 
 The tasks are only stored in Google Tasks, no duplication/syncing takes place. Because of this it is a single user experience.
