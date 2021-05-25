@@ -6,3 +6,5 @@ The scopes which are required by TaskBan are listed, and described below.
 * [https://www.googleapis.com/auth/script.locale](https://www.googleapis.com/auth/script.locale) - This provides your local timezone, so that modifications to the due date of Tasks can be saved correctly.
 * [https://www.googleapis.com/auth/calendar.addons.execute](https://www.googleapis.com/auth/calendar.addons.execute) - This allows the TaskBan add-on to run in the sidebar of Google Calendar, but provides no access to your calendar data.
 * [https://www.googleapis.com/auth/gmail.addons.execute](https://www.googleapis.com/auth/gmail.addons.execute) - This allows the TaskBan add-on to run in the sidebar of Gmail, but provides no access to your emails.
+
+Back to [home page](home.md).
