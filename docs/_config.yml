@@ -1,0 +1,4 @@
+theme: jekyll-theme-minimal
+logo: images/logo.png
+title: TaskBan
+description: A kanban view of your Google Tasks

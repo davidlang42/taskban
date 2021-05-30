@@ -5,6 +5,7 @@ const SHOW_DETAILS_THRESHOLD = 5;
 
 // This url will fail if a user is not logged in and has authorised TaskBan
 const INTERNAL_URL = "https://taskban.davidlang.net/frame.html"; // URL also hardcoded in appsscript.json
+const EXTERNAL_URL = "https://taskban.davidlang.net/"; // also in frame.html
 
 function doGet(e) {
   if (e.parameter.redirect === "") return redirect(INTERNAL_URL); // short circuit for speed
