@@ -28,10 +28,11 @@ But by all means, [buy me a coffee](https://ko-fi.com/davidlang42).
 * Create version & update existing deployment: `clasp deploy -i [deploymentId] -d "[description]"`
 
 ## Hardcoded details
-The sidebar add-on (for Gmail, Calendar, etc) contains links to the main TaskBan app, therefore the url is hardcoded in the following places:
+The app url is hardcoded in the following places:
 * Main.js `const INTERNAL_URL`
 * appsscript.json `addOns.common.universalActions.openLink`
 * frame.html `const EXTERNAL_URL`
+* Main.js `const EXTERNAL_URL`
 * frame.html `const APP_SCRIPT_URL`
 * index.html `const APP_SCRIPT_URL`
 
