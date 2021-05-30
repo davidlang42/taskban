@@ -28,9 +28,10 @@ clasp pull
 echo "${output_prefix}...done"
 if [ "$(git status --porcelain)" != "" ];
 then
-    echo "${output_prefix}Commiting apps script changes..."
+    echo "${output_prefix}Saving apps script changes..."
     git add .
-    git commit -m "$description - apps script changes"
+    git commit -m "$description - POSSIBLE LOST CHANGES"
+    git revert HEAD -m "Revert: $description - POSSIBLE LOST CHANGES"
     echo "${output_prefix}...done"
 fi
 echo "${output_prefix}Pushing to apps scripts..."
