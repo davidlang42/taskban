@@ -31,7 +31,7 @@ Thats all there is to it! Happy task'ing.
 
 A kanban-style view of your Google Tasks where each "task list" in Google Tasks is shown as a "kanban board" in TaskBan.
 
-This add-on allows you to access TaskBan from gmail, calendar and google drive, in the add-on sidebar to the right. It doesn't relate in any way to the email/event/file you have open, but allows quick access links to each of your TaskBan boards. Clicking one of these links launches TaskBan in pop-up window for quick use.
+This add-on allows you to access TaskBan from gmail, calendar and google drive, in the add-on sidebar to the right. It doesn't relate in any way to the email/event/file you have open, but allows quick access links to each of your TaskBan boards. Clicking one of these links launches TaskBan in pop-up window for quick use. There is also a "Clear All Completed Tasks" button (in Calendar add-on only) to quickly clear all completed tasks in any list.
 
 Of course TaskBan can also be accessed in a normal browser tab by going to https://taskban.davidlang.net, where you will be initially presented with a summary of tasks due today (or a different day, selectable by date picker or next/previous buttons). Clicking the heading shows the menu, where you can choose which board you would like to view.
 
