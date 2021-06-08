@@ -6,6 +6,7 @@ There is a small amount of metadata stored in the Google Apps Script Properties 
 
 Hosted directly on Google Apps Script, free for anyone to use: https://taskban.davidlang.net
 (with optional static html iframe hosted on GitHub Pages to make the url look nice)
+It can also be accessed via the Google Workspace Add-On: https://workspace.google.com/marketplace/app/taskban/674749721550
 
 But by all means, [buy me a coffee](https://ko-fi.com/davidlang42).
 
