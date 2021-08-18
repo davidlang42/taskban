@@ -57,6 +57,19 @@ function clearCompletedOnAllBoardsAsync() {
   $('#boardList').modal('hide');
 }
 
+function removeCompletedTasksDueDatesOnAllBoardsAsync() {
+  if(!window.confirm("Are you sure you want to remove due dates from ALL completed tasks on ANY board?")) return;
+  <? if (board) { ?>
+  var list = document.getElementById("<?= board.properties.list_exit ?>");
+  var elements = list.getElementsByClassName("task");
+  for(const e of elements) {
+    addClass(e,"saving");
+  }
+  <? } ?>
+  google.script.run.withSuccessHandler(clearCompletedSuccess).withFailureHandler(clearCompletedFailure).removeCompletedTasksDueDatesOnAllBoards();
+  $('#boardList').modal('hide');
+}
+
 function clearCompletedSuccess() {
   <? if (board) { ?>
   var list = document.getElementById("<?= board.properties.list_exit ?>");

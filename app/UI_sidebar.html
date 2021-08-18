@@ -21,6 +21,7 @@
         <p><button class="btn btn-link" onclick="openBoard('<?= board.title ?>');">Refresh this board</button></p>
         <? } ?>
         <p><button class="btn btn-success" onclick="clearCompletedOnAllBoardsAsync();">Clear completed on ALL boards</button></p>
+        <p><button class="btn btn-warning" onclick="removeCompletedTasksDueDatesOnAllBoardsAsync();">Remove ALL completed dates</button></p>
         <p><button class="btn btn-primary" onclick="addNewBoardInteractive();">Add new board</button></p>
         <p><button class="btn btn-info" onclick="openBoard();"><?= board ? "Day by day summary" : "Refresh summary" ?></button></p>
         <p><a href="<?!= EXTERNAL_URL ?>home.html" target="_blank">Documentation</a><br>

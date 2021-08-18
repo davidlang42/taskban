@@ -173,16 +173,31 @@ function clearCompletedTasksOnAllBoards() {
   var boards = listBoards();
   for (const board of boards) {
     var result = {};
-    var tasks = [];
+    var taskIds = [];
     do {
       result = Tasks.Tasks.list(board.id, {showHidden: true, maxResults: 100, pageToken: result.nextPageToken});
       if(!result || !result.items || !result.items.length) break;
       for(const t of result.items) {
-        if (t.completed && t.status == "completed") tasks.push(t);
+        if (t.completed && t.status == "completed") taskIds.push(t.id);
       }
     } while (result.nextPageToken);
-    for(const task of tasks) {
-      Tasks.Tasks.remove(board.id, task.id);
-    }
+    clearCompletedTasks(board.id, taskIds);
+  }
+}
+
+// client call, add-on call
+function removeCompletedTasksDueDatesOnAllBoards() {
+  var boards = listBoards();
+  for (const board of boards) {
+    var result = {};
+    var taskIds = [];
+    do {
+      result = Tasks.Tasks.list(board.id, {showHidden: true, maxResults: 100, pageToken: result.nextPageToken});
+      if(!result || !result.items || !result.items.length) break;
+      for(const t of result.items) {
+        if (t.completed && t.status == "completed") taskIds.push(t.id);
+      }
+    } while (result.nextPageToken);
+    removeDueDatesCompleted(board.id, taskIds);
   }
 }
