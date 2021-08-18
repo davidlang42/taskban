@@ -538,57 +538,60 @@ function loadTasksAsync() {
   google.script.run.withSuccessHandler(loadTasksSuccess).withFailureHandler(showError).getAllTasks("<?= board.id ?>");
 }
 
-function loadTaskAsync(taskId, showLoading) {
+function loadTaskAsync(taskId) {
   var element = document.getElementById(taskId);
-  if (showLoading)
-    addClass(element, "loading");
+  addClass(element, "loading");
   google.script.run.withSuccessHandler(loadTaskSuccess).withFailureHandler(showError).getTask("<?= board.id ?>",taskId);
 }
 
 function loadTaskSuccess(task) {
-  loadTasksSuccess([task],false);
+  updateTaskElement(task,false);
 }
 
 function loadTasksSuccess(tasks,optimistic) {
-  var eTask, eList, existing;
-  for(const task of tasks) {
-    existing = document.getElementById(task.id);
-    if (task.deleted && !optimistic) {
-      // shortcut to remove if confirmed delete
-      if(existing) existing.parentNode.removeChild(existing);
-      continue;
-    }
-    eTask = $(formatHtmlTask(task,optimistic))[0];
-    eList = document.getElementById(task.list);
-    if(eList) {
-      if(!existing && !optimistic) existing = matchNewTaskByData(task);
-      if(existing && optimistic && existing.parentNode == eList) {
-        eList.replaceChild(eTask,existing);
-      } else {
-        if (!task.position)
-          task.position = ""; // default to top position
-        if (existing)
-          existing.parentNode.removeChild(existing);
-        var lastChild = null;
-        for(const childTask of eList.getElementsByClassName('task')) {
-          lastChild = childTask;
-          var childPosition = childTask.getElementsByClassName('task-position')[0].innerHTML;
-          if (childPosition >= task.position)
-            break;
-        }
-        if (lastChild && lastChild.getElementsByClassName('task-position')[0].innerHTML >= task.position) {
-          eList.insertBefore(eTask, lastChild);
-          if (lastChild.getElementsByClassName('task-position')[0].innerHTML == task.position)
-            loadTaskAsync(lastChild.id, false); // equal positions means it is out of date
-        } else
-          eList.appendChild(eTask);
-      }
-    } else {
-      alert('Error loading task: List '+task.list+' not found.');
-    }
-  }
+  for(const task of tasks)
+    updateTaskElement(task, optimistic, true);
   removeElementsByClass("loading");
   updateFilter(); // calls updateDropzones() and updateTaskCount()
+}
+
+function updateTaskElement(task, optimistic, delayFilterUpdate) {
+  var existing = document.getElementById(task.id);
+  if (task.deleted && !optimistic) {
+    // shortcut to remove if confirmed delete
+    if(existing) existing.parentNode.removeChild(existing);
+    return;
+  }
+  var eTask = $(formatHtmlTask(task,optimistic))[0];
+  var eList = document.getElementById(task.list);
+  if(eList) {
+    if(!existing && !optimistic) existing = matchNewTaskByData(task);
+    if(existing && optimistic && existing.parentNode == eList) {
+      eList.replaceChild(eTask,existing);
+    } else {
+      if (!task.position)
+        task.position = ""; // default to top position
+      if (existing)
+        existing.parentNode.removeChild(existing);
+      var lastChild = null;
+      for(const childTask of eList.getElementsByClassName('task')) {
+        lastChild = childTask;
+        var childPosition = childTask.getElementsByClassName('task-position')[0].innerHTML;
+        if (childPosition >= task.position)
+          break;
+      }
+      if (lastChild && lastChild.getElementsByClassName('task-position')[0].innerHTML >= task.position) {
+        eList.insertBefore(eTask, lastChild);
+        if (lastChild.getElementsByClassName('task-position')[0].innerHTML == task.position)
+          loadTaskAsync(lastChild.id); // equal positions means it is out of date
+      } else
+        eList.appendChild(eTask);
+    }
+  } else {
+    alert('Error loading task: List '+task.list+' not found.');
+  }
+  if (!delayFilterUpdate)
+    updateFilter(); // calls updateDropzones() and updateTaskCount()
 }
 
 function matchNewTaskByData(task) {
@@ -734,7 +737,7 @@ function saveEditDialogAsync(action) {
   } else if(action=='complete') {
     changes.list = "<?= board.properties.list_exit ?>";
   }
-  loadTasksSuccess([changes],true); // add/save (optimistically) in dom immediately, to be updated again on callback
+  updateTaskElement(changes,true); // add/save (optimistically) in dom immediately, to be updated again on callback
   if (changes.id) {
     google.script.run.withSuccessHandler(updateTaskSuccess).withFailureHandler(updateTaskFailure).withUserObject(changes.id).editTask("<?= board.id ?>",changes);
   } else {
@@ -760,7 +763,7 @@ function addTaskFailure(error) {
 function updateTaskSuccess(task,taskId) {
   var ele = document.getElementById(taskId);
   if(ele) removeClass(ele,"saving");
-  if(task) loadTasksSuccess([task]);
+  if(task) updateTaskElement(task);
 }
 
 function updateTaskFailure(error,taskId) {
