@@ -41,7 +41,6 @@ The app url is hardcoded in the following places:
 * index.html `const APP_SCRIPT_URL`
 
 ## Future features:
-* Task ordering
 * Task versions
 * Task pre-requisites
 * Remove due dates button (in done column & add-on)
