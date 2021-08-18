@@ -70,11 +70,11 @@
           <div class="modal-body" id="edit_loading">Loading...</div>
           <div class="modal-body" id="edit_body">
             <input type="hidden" id="edit_id">
-            <p>Title:<br><input type="text" id="edit_title" class="form-control save-on-enter save-on-ctrl-enter save-on-ctrl-s done-on-ctrl-d del-on-ctrl-del"></p>
-            <p>Notes:<br><textarea id="edit_notes" rows="8" cols="60" style="resize: none;" class="form-control save-on-ctrl-enter save-on-ctrl-s done-on-ctrl-d del-on-ctrl-del"></textarea></p>
+            <p>Title:<br><input type="text" id="edit_title" class="form-control save-on-enter save-on-ctrl-enter save-on-ctrl-s done-on-ctrl-d del-on-ctrl-del" onInput="enableSaveEdit();"></p>
+            <p>Notes:<br><textarea id="edit_notes" rows="8" cols="60" style="resize: none;" class="form-control save-on-ctrl-enter save-on-ctrl-s done-on-ctrl-d del-on-ctrl-del" onInput="enableSaveEdit();"></textarea></p>
             <p id="edit_links"></p>
-            <div><span>Due: &nbsp;&nbsp;<input type="date" id="edit_due" class="save-on-enter save-on-ctrl-enter save-on-ctrl-s done-on-ctrl-d del-on-ctrl-del"></span>
-            <span class="float-right"><select id="edit_list" class="save-on-enter save-on-ctrl-enter save-on-ctrl-s done-on-ctrl-d del-on-ctrl-del">
+            <div><span>Due: &nbsp;&nbsp;<input type="date" id="edit_due" class="save-on-enter save-on-ctrl-enter save-on-ctrl-s done-on-ctrl-d del-on-ctrl-del" onChange="enableSaveEdit();"></span>
+            <span class="float-right"><select id="edit_list" class="save-on-enter save-on-ctrl-enter save-on-ctrl-s done-on-ctrl-d del-on-ctrl-del" onChange="enableSaveEdit();">
             <? for(var list of board.properties.lists) { ?>
             <option value="<?= list ?>"><?= list ?></option>
             <? } ?>

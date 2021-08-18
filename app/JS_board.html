@@ -614,6 +614,11 @@ function configureEditDialogEvents() {
   editDialog.on('shown.bs.modal', function (event) {
     document.getElementById('edit_title').focus();
   });
+  editDialog.on('hide.bs.modal', function (e) {
+    var edit_save = document.getElementById('edit_save');
+    if (!edit_save.disabled && !confirm('Are you sure you want to close without saving?'))
+      e.preventDefault();
+  });
   $('.save-on-enter').keypress(function (event) {
     if (event.keyCode == 13) {
       event.preventDefault();
@@ -661,7 +666,6 @@ function openEditDialogSuccess(task) {
     }
     document.getElementById('edit_delete').style.display = "initial";
   }
-  document.getElementById('edit_save').disabled = false;
   document.getElementById('edit_id').value = task.id;
   document.getElementById('edit_list').value = task.list;
   document.getElementById('edit_links').innerHTML = formatHtmlLinks(task.links);
@@ -705,7 +709,12 @@ function saveEditDialogAsync(action) {
   } else {
     google.script.run.withSuccessHandler(updateTaskSuccess).withFailureHandler(addTaskFailure).addTask("<?= board.id ?>",changes);
   }
+  document.getElementById('edit_save').disabled = true; // so that user isn't asked if they want to save changes
   $('#editDialog').modal('hide');
+}
+
+function enableSaveEdit() {
+  document.getElementById('edit_save').disabled = false;
 }
 
 function addTaskFailure(error) {

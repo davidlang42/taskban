@@ -43,7 +43,6 @@ The app url is hardcoded in the following places:
 ## Future features:
 * Markdown formatting
 * Progressive Web App
-* Save changes warning (when closing add/edit dialog)
 * Task pre-requisites
 * Remove due dates button (in done column & add-on)
 * Task ordering
