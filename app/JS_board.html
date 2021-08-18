@@ -538,6 +538,17 @@ function loadTasksAsync() {
   google.script.run.withSuccessHandler(loadTasksSuccess).withFailureHandler(showError).getAllTasks("<?= board.id ?>");
 }
 
+function loadTaskAsync(taskId, showLoading) {
+  var element = document.getElementById(taskId);
+  if (showLoading)
+    addClass(element, "loading");
+  google.script.run.withSuccessHandler(loadTaskSuccess).withFailureHandler(showError).getTask("<?= board.id ?>",taskId);
+}
+
+function loadTaskSuccess(task) {
+  loadTasksSuccess([task],false);
+}
+
 function loadTasksSuccess(tasks,optimistic) {
   var eTask, eList, existing;
   for(const task of tasks) {
@@ -562,12 +573,14 @@ function loadTasksSuccess(tasks,optimistic) {
         for(const childTask of eList.getElementsByClassName('task')) {
           lastChild = childTask;
           var childPosition = childTask.getElementsByClassName('task-position')[0].innerHTML;
-          if (childPosition > task.position)
+          if (childPosition >= task.position)
             break;
         }
-        if (lastChild && lastChild.getElementsByClassName('task-position')[0].innerHTML > task.position)
+        if (lastChild && lastChild.getElementsByClassName('task-position')[0].innerHTML >= task.position) {
           eList.insertBefore(eTask, lastChild);
-        else
+          if (lastChild.getElementsByClassName('task-position')[0].innerHTML == task.position)
+            loadTaskAsync(lastChild.id, false); // equal positions means it is out of date
+        } else
           eList.appendChild(eTask);
       }
     } else {

@@ -120,7 +120,7 @@ function moveTask(boardId, taskId, listName, afterTaskId) {
     id:taskId,
     title:task.title,
     list:listName
-  }, afterTaskId); //TODO POTENTIAL BUG: the position of all tasks in the list (or board?) will need to be updated when one position is changed
+  }, afterTaskId);
 }
 
 function updateTask(boardId,changes,afterTaskId) {
