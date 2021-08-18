@@ -111,7 +111,7 @@ function addTask(boardId, changes) {
 }
 
 // client call
-function moveTask(boardId, taskId, listName) {
+function moveTask(boardId, taskId, listName, afterTaskId) {
   var task = Tasks.Tasks.get(boardId, taskId);
   if(!task) throw new Error("Task not found: " + taskId);
   if(task.deleted) throw new Error("Task has been deleted: " + taskId);
@@ -120,10 +120,10 @@ function moveTask(boardId, taskId, listName) {
     id:taskId,
     title:task.title,
     list:listName
-  });
+  }, afterTaskId); //TODO POTENTIAL BUG: the position of all tasks in the list (or board?) will need to be updated when one position is changed
 }
 
-function updateTask(boardId,changes) {
+function updateTask(boardId,changes,afterTaskId) {
   var board = {id: boardId};
   loadBoardProperties(board);
   if(changes.due) changes.due = formatDateTasks(new Date(changes.due));
@@ -143,9 +143,10 @@ function updateTask(boardId,changes) {
   var task;
   if (changes.id) {
     task = Tasks.Tasks.patch(changes, boardId, changes.id);
-    //FUTURE task = Tasks.Tasks.move(boardId, taskId, {parent:,previous:});
+    if (afterTaskId)
+      task = Tasks.Tasks.move(boardId, changes.id, {previous: afterTaskId}); //FUTURE {parent:,previous:}
   } else {
-    task = Tasks.Tasks.insert(changes, boardId); //FUTURE ,{parent:,previous:}
+    task = Tasks.Tasks.insert(changes, boardId, {previous: afterTaskId}); //FUTURE {parent:,previous:}
   }
   processTask(task, board);
   return task;

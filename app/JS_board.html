@@ -25,7 +25,15 @@ const drop = (event) => {
   event.preventDefault();
   const data = event.dataTransfer.getData("text/plain");
   const element = document.querySelector(`#${data}`);
-  const listName = event.target.parentNode.id; //task div layer changes will make this fail
+  const listName = event.target.parentNode.id; //task div layer changes will make this fail1
+  // find the taskId which this task has been dropped blow
+  var afterTaskId = null;
+  for(const child of event.target.parentNode.childNodes) {
+    if (child == event.target)
+      break;
+    if (hasClass(child, "task"))
+      afterTaskId = child.id;
+  }
   try {
     // remove the spacer content from dropzone
     event.target.removeChild(event.target.firstChild);
@@ -34,7 +42,7 @@ const drop = (event) => {
     // remove the dropzone parent
     unwrap(event.target);
     // save the change to google tasks
-    moveTaskAsync(data, listName);
+    moveTaskAsync(data, listName, afterTaskId);
   } catch (error) {
     console.warn("can't move the item to the same place");
   }
@@ -220,6 +228,7 @@ function formatHtmlTask(task,optimistic) {
   if(!task.deleted && task.id) html += ' data-toggle="modal" data-target="#editDialog" data-id="'+task.id+'"';
   html += ' class="task-notes">'+formatHtmlNotes(task.notes)+'</p>';
   html += '<div class="task-links">'+formatHtmlLinks(task.links)+'</div>';
+  html += '<div class="task-position" style="display: none;">'+task.position+'</div>'; // invisible, but stored so that things can be ordered later
   html += '</div>';
   html += '</div>';
   html += '</div>';
@@ -292,10 +301,10 @@ function formatHtmlDate(date_string) {
 
 // move task
 
-function moveTaskAsync(taskId,listName) {
+function moveTaskAsync(taskId,listName,afterTaskId) {
   var ele = document.getElementById(taskId);
   addClass(ele,"saving");
-  google.script.run.withSuccessHandler(updateTaskSuccess).withFailureHandler(updateTaskFailure).withUserObject(taskId).moveTask("<?= board.id ?>", taskId, listName);
+  google.script.run.withSuccessHandler(updateTaskSuccess).withFailureHandler(updateTaskFailure).withUserObject(taskId).moveTask("<?= board.id ?>", taskId, listName, afterTaskId);
 }
 
 // settings dialog
@@ -542,15 +551,24 @@ function loadTasksSuccess(tasks,optimistic) {
     eList = document.getElementById(task.list);
     if(eList) {
       if(!existing && !optimistic) existing = matchNewTaskByData(task);
-      if(existing) {
-        if (existing.parentNode == eList) {
-          eList.replaceChild(eTask,existing);
-        } else {
-          existing.parentNode.removeChild(existing);
-          eList.appendChild(eTask);
-        }
+      if(existing && optimistic && existing.parentNode == eList) {
+        eList.replaceChild(eTask,existing);
       } else {
-        eList.appendChild(eTask);
+        if (!task.position)
+          task.position = ""; // default to top position
+        if (existing)
+          existing.parentNode.removeChild(existing);
+        var lastChild = null;
+        for(const childTask of eList.getElementsByClassName('task')) {
+          lastChild = childTask;
+          var childPosition = childTask.getElementsByClassName('task-position')[0].innerHTML;
+          if (childPosition > task.position)
+            break;
+        }
+        if (lastChild && lastChild.getElementsByClassName('task-position')[0].innerHTML > task.position)
+          eList.insertBefore(eTask, lastChild);
+        else
+          eList.appendChild(eTask);
       }
     } else {
       alert('Error loading task: List '+task.list+' not found.');
