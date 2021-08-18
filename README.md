@@ -41,11 +41,13 @@ The app url is hardcoded in the following places:
 * index.html `const APP_SCRIPT_URL`
 
 ## Future features:
-* Markdown formatting
-* Progressive Web App
+* Task ordering
+* Task versions
 * Task pre-requisites
 * Remove due dates button (in done column & add-on)
-* Task ordering
-* Subtask support
-* Wrong list dialog (for tasks with a list that doesn't exist)
+* Scrolling summary page
 * Snap scroll to list
+* Subtask support
+* Progressive Web App
+* Markdown formatting
+* Wrong list dialog (for tasks with a list that doesn't exist)
