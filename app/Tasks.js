@@ -160,6 +160,14 @@ function clearCompletedTasks(boardId, taskIds) {
   }
 }
 
+// client call
+function removeDueDatesCompleted(boardId, taskIds) {
+  // only those which are listed (those that were visible)
+  for(const taskId of taskIds) {
+    Tasks.Tasks.patch({id: taskId, due: null}, boardId, taskId);
+  }
+}
+
 // client call, add-on call
 function clearCompletedTasksOnAllBoards() {
   var boards = listBoards();

@@ -43,7 +43,10 @@
                         <div>
                         <h6 class="card-title text-uppercase text-truncate py-2" style="display: inline-block;"><?= list ?></h6>
                         <? if (list == board.properties.list_exit) { ?>
-                        <button type="button" class="btn btn-success float-right" id="exit_clear" onClick="clearCompletedAsync();">Clear</button>
+                        <div class="float-right">
+                          <button type="button" class="btn btn-warning" id="exit_remove_dates" onClick="removeDueDatesCompletedAsync();">Dates</button>
+                          <button type="button" class="btn btn-success" id="exit_clear" onClick="clearCompletedAsync();">Clear</button>
+                        </div>
                         <? } else { ?>
                         <button class="btn btn-<?= list == board.properties.list_entry ? "primary" : "secondary" ?> btn-sm float-right" data-toggle="modal" data-target="#editDialog" data-list="<?= list ?>"<?!= list == board.properties.list_entry ? ' id="add_to_list_entry"' : '' ?>>+</button>
                         <? } ?>
