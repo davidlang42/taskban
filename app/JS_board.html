@@ -142,19 +142,30 @@ var longestListLength = 0;
 
 function updateTaskCount() {
   var newLongestListLength = 0;
-  var listCount;
+  var listVisibleCount;
+  var listTotalCount;
   var tasks;
   var lists = document.getElementsByClassName("items");
   for(var list of lists) {
-    listCount = 0;
+    listVisibleCount = 0;
+    listTotalCount = 0;
     tasks = list.getElementsByClassName("task");
     for(var task of tasks) {
-      if (task.style.display != "none") listCount++;
+      if (task.style.display != "none") listVisibleCount++;
+      listTotalCount++;
     }
+    var heading;
+    if (listTotalCount == 0)
+      heading = list.id;
+    else if (listTotalCount == listVisibleCount)
+      heading = list.id + " (" + listVisibleCount + ")";
+    else
+      heading = list.id + " (" + listVisibleCount + "/" + listTotalCount + ")";
+    list.parentNode.getElementsByClassName("card-title")[0].innerHTML = heading;
     if (list.id == "<?= board.properties.list_exit ?>") {
-      document.getElementById('exit_clear').style.display = listCount ? "initial" : "none";
+      document.getElementById('exit_clear').style.display = listVisibleCount ? "initial" : "none";
     } else {
-      if (listCount > newLongestListLength) newLongestListLength = listCount;
+      if (listVisibleCount > newLongestListLength) newLongestListLength = listVisibleCount;
     }
   }
   if (newLongestListLength > <?= SHOW_DETAILS_THRESHOLD ?> && longestListLength <= <?= SHOW_DETAILS_THRESHOLD ?>) {
