@@ -31,7 +31,7 @@ const drop = (event) => {
   for(const child of event.target.parentNode.childNodes) {
     if (child == event.target)
       break;
-    if (hasClass(child, "task"))
+    if (hasClass(child, "task") && child.id != data)
       afterTaskId = child.id;
   }
   try {
