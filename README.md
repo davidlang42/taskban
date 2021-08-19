@@ -43,7 +43,6 @@ The app url is hardcoded in the following places:
 ## Future features:
 * Task versions
 * Task pre-requisites
-* Remove due dates button (in done column & add-on)
 * Scrolling summary page
 * Snap scroll to list
 * Subtask support
