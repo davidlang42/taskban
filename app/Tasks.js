@@ -18,6 +18,16 @@ function getAllTasks(boardId) {
   return tasks;
 }
 
+// client call (TBC)
+function getManyTasks(boardId, taskIds) {
+  var tasks = [];
+  for(const task of getAllTasks(boardId)) {
+    if (taskIds.includes(task.id))
+      tasks.push(task);
+  }
+  return tasks;
+}
+
 // client call
 function getTasksByDate(date_string) {
   const dMin = new Date(Date.parse(date_string));

@@ -550,18 +550,29 @@ function loadTaskAsync(taskId) {
   google.script.run.withSuccessHandler(loadTaskSuccess).withFailureHandler(showError).getTask("<?= board.id ?>",taskId);
 }
 
+function loadListAsync(listName) {
+  var list = document.getElementById(listName);
+  var elements = list.getElementsByClassName("task");
+  var taskIds = [];
+  for(const e of elements) {
+    addClass(e,"loading");
+    taskIds.push(e.id);
+  }
+  google.script.run.withSuccessHandler(loadTasksSuccess).withFailureHandler(showError).getManyTasks("<?= board.id ?>", taskIds);
+}
+
 function loadTaskSuccess(task) {
   updateTaskElement(task,false);
 }
 
 function loadTasksSuccess(tasks,optimistic) {
   for(const task of tasks)
-    updateTaskElement(task, optimistic, true);
+    updateTaskElement(task, optimistic, true); // true to delayUpdates because: filter is updated below, order won't be out of date for long when bulk loading
   removeElementsByClass("loading");
   updateFilter(); // calls updateDropzones() and updateTaskCount()
 }
 
-function updateTaskElement(task, optimistic, delayFilterUpdate) {
+function updateTaskElement(task, optimistic, delayUpdates) {
   var existing = document.getElementById(task.id);
   if (task.deleted && !optimistic) {
     // shortcut to remove if confirmed delete
@@ -570,6 +581,7 @@ function updateTaskElement(task, optimistic, delayFilterUpdate) {
   }
   var eTask = $(formatHtmlTask(task,optimistic))[0];
   var eList = document.getElementById(task.list);
+  var positionOutOfDate = false;
   if(eList) {
     if(!existing && !optimistic) existing = matchNewTaskByData(task);
     if(existing && optimistic && existing.parentNode == eList) {
@@ -588,15 +600,15 @@ function updateTaskElement(task, optimistic, delayFilterUpdate) {
       }
       if (lastChild && lastChild.getElementsByClassName('task-position')[0].innerHTML >= task.position) {
         eList.insertBefore(eTask, lastChild);
-        if (lastChild.getElementsByClassName('task-position')[0].innerHTML == task.position)
-          loadTaskAsync(lastChild.id); // equal positions means it is out of date
+        if (lastChild.getElementsByClassName('task-position')[0].innerHTML == task.position && !delayUpdates) // equal positions means it is out of date
+          loadListAsync(task.list); // update the whole list to avoid overloading tasks API with cascading update requests
       } else
         eList.appendChild(eTask);
     }
   } else {
     alert('Error loading task: List '+task.list+' not found.');
   }
-  if (!delayFilterUpdate)
+  if (!delayUpdates)
     updateFilter(); // calls updateDropzones() and updateTaskCount()
 }
 
@@ -804,8 +816,11 @@ function removeDueDatesCompletedAsync() {
   var taskIds = [];
   for(const e of elements) {
     if (e.style.display != "none") {
-      addClass(e,"saving");
-      taskIds.push(e.id);
+      const due_element = e.getElementsByClassName("task-due")[0];
+      if (due_element.innerHTML) {
+        addClass(e,"saving");
+        taskIds.push(e.id);
+      }
     }
   }
   google.script.run.withSuccessHandler(clearCompletedSuccess).withFailureHandler(clearCompletedFailure).removeDueDatesCompleted("<?= board.id ?>", taskIds);
