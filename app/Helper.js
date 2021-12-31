@@ -31,7 +31,7 @@ function includesIgnoreCase(array, item) {
 function formatDateForm(date_string) {
   if(!date_string) return "";
   var d = new Date(date_string);
-  return Utilities.formatDate(d, Session.getScriptTimeZone(), "YYYY-MM-dd");
+  return Utilities.formatDate(d, Session.getScriptTimeZone(), "yyyy-MM-dd");
 }
 
 function formatDateTasks(date) {
