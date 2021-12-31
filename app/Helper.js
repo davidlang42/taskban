@@ -11,8 +11,7 @@ function include(filename,objects) {
 }
 
 function redirect(url) {
-  var html = "<form action='" + url + "' target='_top' method='get' id='redirect'><input type=submit value='Redirect to TaskBan'></form>" + 
-    "<script>document.getElementById('redirect').submit();</script>";
+  var html = "<h1><a href='" + url + "' target='_top'>Redirect to TaskBan</a></h1><script>window.open('"+url+"','_top');</script>";
   return HtmlService.createHtmlOutput(html).setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 
