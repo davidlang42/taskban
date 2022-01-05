@@ -11,7 +11,7 @@ function include(filename,objects) {
 }
 
 function redirect(url) {
-  var html = "<h1><a href='" + url + "' target='_top'>Redirect to TaskBan</a></h1><script>window.open('"+url+"','_top');</script>";
+  var html = "<h2 style='font-family: sans-serif;'><a href='" + url + "' target='_top'>Login successul, click here to launch TaskBan</a></h2><script>window.open('"+url+"','_top');</script>";
   return HtmlService.createHtmlOutput(html).setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 
