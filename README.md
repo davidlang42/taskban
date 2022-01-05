@@ -35,9 +35,9 @@ But by all means, [buy me a coffee](https://ko-fi.com/davidlang42).
 The app url is hardcoded in the following places:
 * Main.js `const INTERNAL_URL`
 * appsscript.json `addOns.common.universalActions.openLink`
-* frame.html `const EXTERNAL_URL`
+* app.html `const EXTERNAL_URL`
 * Main.js `const EXTERNAL_URL`
-* frame.html `const APP_SCRIPT_URL`
+* app.html `const APP_SCRIPT_URL`
 * index.html `const APP_SCRIPT_URL`
 
 ## Future features:
