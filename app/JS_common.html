@@ -72,11 +72,7 @@ function removeCompletedTasksDueDatesOnAllBoardsAsync() {
 
 function clearCompletedSuccess() {
   <? if (board) { ?>
-  var list = document.getElementById("<?= board.properties.list_exit ?>");
-  var elements = list.getElementsByClassName("task");
-  for(const e of elements) {
-    google.script.run.withSuccessHandler(updateTaskSuccess).withFailureHandler(updateTaskFailure).withUserObject(e.id).getTask("<?= board.id ?>", e.id);
-  }
+  loadListAsync("<?= board.properties.list_exit ?>");
   <? } ?>
 }
 

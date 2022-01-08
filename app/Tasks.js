@@ -18,7 +18,7 @@ function getAllTasks(boardId) {
   return tasks;
 }
 
-// client call (TBC)
+// client call
 function getManyTasks(boardId, taskIds) {
   var tasks = [];
   for(const task of getAllTasks(boardId)) {
