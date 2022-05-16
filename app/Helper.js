@@ -44,3 +44,25 @@ function removeTime(dt) {
   dt.setSeconds(0);
   dt.setMilliseconds(0);
 }
+
+function compare(x,y) {
+  if (x > y)
+    return 1;
+  else if (x < y)
+    return -1;
+  else
+    return 0;
+}
+
+function compareFallback(x,y,x2,y2) {
+  if (x > y)
+    return 1;
+  else if (x < y)
+    return -1;
+  else if (x2 > y2)
+    return 1;
+  else if (x2 < y2)
+    return -1;
+  else
+    return 0;
+}

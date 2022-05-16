@@ -211,3 +211,43 @@ function removeCompletedTasksDueDatesOnAllBoards() {
     removeDueDatesCompleted(board.id, taskIds);
   }
 }
+
+// client call
+function sortTasks(boardId, taskIds, sortMethod) {
+  // only those which are listed (those that were visible)
+  var tasks = getManyTasks(boardId, taskIds);
+  var currentOrderIds = tasks.sort((a,b) => compare(a.position, b.position)).map((t) => t.id); // mutates 'tasks' order
+  var newOrderIds = runSortMethod(tasks, sortMethod).map((t) => t.id); // mutates 'tasks' order
+  var previousId = null;
+  var mustMove = false;
+  for (var i=0; i<newOrderIds.length; i++) {
+    if (mustMove || newOrderIds[i] != currentOrderIds[i]) {
+      mustMove = true;
+      Tasks.Tasks.move(boardId, newOrderIds[i], {previous: previousId});
+    }
+    previousId = newOrderIds[i];
+  }
+}
+
+function runSortMethod(tasks, sortMethod) {
+  if (sortMethod == 'title') {
+    tasks.sort((a,b) => compare(a.title, b.title));
+  } else if (sortMethod == 'due') {
+    tasks = tasks.filter((t) => t.due);
+    tasks.sort((a,b) => compare(a.due, b.due));
+  } else if (sortMethod == 'numeric') {
+    for (const task of tasks)
+      task.numericPrefix = extractNumericPrefix(task.title);
+    tasks = tasks.filter((t) => !isNaN(t.numericPrefix));
+    tasks.sort((a,b) => compareFallback(a.numericPrefix, b.numericPrefix, a.title, b.title))
+  } else if (sortMethod == 'recent') {
+    tasks.sort((a,b) => compare(b.updated, a.updated));
+  } else {
+    throw "Invalid sort method: " + sortMethod;
+  }
+  return tasks;
+}
+
+function extractNumericPrefix(title) {
+  return parseFloat(title.split(" ")[0].replace(/[^0-9\.]/gi, ''));
+}

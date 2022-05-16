@@ -1,7 +1,6 @@
 <?
 // inputs: board = taskList
 ?>
-<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.10.2/Sortable.min.js" integrity="sha256-8Ww0c1qKDMdHT2+3s3369kzSXcgIrvqzSwzjdZ5qHDs=" crossorigin="anonymous"></script>
 <script>
 // drag & drop
@@ -789,6 +788,35 @@ function updateTaskFailure(error,taskId) {
   if(ele) {
     removeClass(ele,"saving");
     addClass(ele,"not_saved");
+  }
+  showError(error);
+}
+
+// sort tasks
+
+function sortListAsync(listName, sortMethod) {
+  var list = document.getElementById(listName);
+  var elements = list.getElementsByClassName("task");
+  var taskIds = [];
+  for(const e of elements) {
+    if (e.style.display != "none") {
+      addClass(e,"saving");
+      taskIds.push(e.id);
+    }
+  }
+  google.script.run.withSuccessHandler(sortListSuccess).withFailureHandler(sortListFailure).withUserObject(listName).sortTasks("<?= board.id ?>", taskIds, sortMethod);
+}
+
+function sortListSuccess(_, listName) {
+  loadListAsync(listName);
+}
+
+function sortListFailure(error, listName) {
+  var list = document.getElementById(listName);
+  var elements = list.getElementsByClassName("task");
+  for(const e of elements) {
+    removeClass(e,"saving");
+    addClass(e,"not_saved");
   }
   showError(error);
 }
