@@ -40,12 +40,7 @@ The app url is hardcoded in the following places:
 * app.html `const APP_SCRIPT_URL`
 * index.html `const APP_SCRIPT_URL`
 
-## Future features:
-* Task versions
-* Task pre-requisites
-* Scrolling summary page
-* Snap scroll to list
-* Subtask support
-* Progressive Web App
-* Markdown formatting
-* Wrong list dialog (for tasks with a list that doesn't exist)
+## Future features
+See GitHub [issues](https://github.com/davidlang42/taskban/issues) for a list of new enhancement or known bugs.
+
+Feel free to also work on these features/ bug fixes and submit a [pull request](https://github.com/davidlang42/taskban/pulls).
