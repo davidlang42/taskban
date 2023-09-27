@@ -3,16 +3,19 @@
 ?>
 <script>
 var cache = {}; // formDate: tasks[]
+var calendar = {}; // formDate: Date
 var minDate = new Date('<?= formatDateForm(initial_date) ?>');
 var daysToPreload = 7;
 
 function loadTasksAsync() {
   var d = document.getElementById("summary_date").value;
   var content = document.getElementById("accordion");
+  var calendar_date = document.getElementById("calendar_date");
   if (d) {
     const cached_value = cache[d];
     if (cached_value) {
       content.innerHTML = cached_value;
+      calendar_date.value = calendar[d].toDateString();
       preloadCache();
     } else {
       content.innerHTML = '<div class="loading">Loading...</div>';
@@ -32,17 +35,23 @@ function formatDateForm(date_string) {
 function loadTasksSuccess(tasks,date_string) {
   var d = new Date(date_string);
   var html = '<h5>'+d.toDateString()+'</h5>';
+  var earliest_date = d;
   if (tasks && tasks.length) {
     for (const task of tasks) {
       html += formatHtmlTask(task);
+      var this_date = new Date(task.due);
+      if (this_date < earliest_date)
+        earliest_date = this_date;
     }
   } else {
     html += "No tasks.";
   }
   if (date_string == document.getElementById("summary_date").value) {
+    document.getElementById("calendar_date").value = earliest_date.toDateString();
     document.getElementById("accordion").innerHTML = html;
   }
   cache[date_string] = html;
+  calendar[date_string] = earliest_date;
   preloadCache();
 }
 
@@ -147,5 +156,11 @@ function changeList(boardId, taskId, listName) {
 
 function uniqueId(boardId,taskId) {
   return boardId + taskId;
+}
+
+function openCalendar() {
+  var d = new Date(document.getElementById("calendar_date").value);
+  var url = "https://calendar.google.com/calendar/u/0/r/customweek/"+d.getFullYear()+"/"+(d.getMonth()+1)+"/"+d.getDate();
+  window.open(url,"_blank");
 }
 </script>

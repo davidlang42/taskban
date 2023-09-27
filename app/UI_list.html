@@ -15,6 +15,8 @@
     <div class="container-fluid pt-3" style="background-color: white;">
       <h3 class="font-weight-light text-black" data-toggle="modal" data-target="#boardList" id="toggle_board_list" style="display:inline;">TaskBan Summary</h3>
       <button class="btn btn-primary btn-sm float-right" onClick="clearCurrentCache();loadTasksAsync();">🔄</button>
+      <button class="btn btn-link btn-sm float-right" onClick="openCalendar();">Open Calendar</button>
+      <input type="hidden" id="calendar_date" value="<?= formatDateForm(initial_date) ?>">
       <p><input type="date" id="summary_date" value="<?= formatDateForm(initial_date) ?>" min="<?= formatDateForm(initial_date) ?>" onchange="loadTasksAsync()">
       <button type="button" class="float-right btn btn-dark" onclick="changeDay(1)">Next</button>
       <button type="button" class="float-right btn btn-light" onclick="changeDay(-1)">Prev</button></p>
