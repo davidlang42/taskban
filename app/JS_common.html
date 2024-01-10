@@ -27,8 +27,9 @@ function openBoard(boardName) {
   var url = "<?= INTERNAL_URL ?>";
   var target = "taskban";
   if (boardName) {
-    url += "?b=" + boardName.replace(/ /g,"-");
-    target += '_'+boardName.replace(/ /g,"-");
+    var escapedBoardName = encodeURIComponent(boardName.replace(/ /g,"-"));
+    url += "?b=" + escapedBoardName;
+    target += '_' + escapedBoardName;
   }
   <? if (board) { ?>
   if (boardName=='<?= board.title ?>') target = "_self"
