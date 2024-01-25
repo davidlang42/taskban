@@ -43,6 +43,7 @@ function defaultBoardProperties() {
     // list_entry: "Todo"
     // list_exit: "Done"
     // links: []
+    // enable_prerequisites: false
   };
 }
 
@@ -58,7 +59,7 @@ function deleteBoardProperties(board) {
 }
 
 // client call
-function saveBoardSettings(tasklistId,lists,list_entry,list_exit,links,fit_columns) {
+function saveBoardSettings(tasklistId,lists,list_entry,list_exit,links,fit_columns,enable_prerequisites) {
   if (!lists || !lists.length || lists.length < 2) return "There must be at least 2 lists.";
   if (!list_entry) return "Entry list not set.";
   if (!list_exit) return "Exit list not set.";
@@ -69,6 +70,7 @@ function saveBoardSettings(tasklistId,lists,list_entry,list_exit,links,fit_colum
   dummyBoard.properties.list_exit = list_exit;
   dummyBoard.properties.links = links;
   dummyBoard.properties.fit_columns = fit_columns;
+  dummyBoard.properties.enable_prerequisites = enable_prerequisites;
   storeBoardProperties(dummyBoard);
   return "Board settings saved. The page will now refresh.";
 }
