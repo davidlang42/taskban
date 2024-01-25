@@ -333,6 +333,7 @@ function configureSettingsDialogEvents() {
     document.getElementById("settings_link_label").value = '';
     document.getElementById("settings_link_url").value = '';
     document.getElementById("settings_fit_columns").checked = <?!= board.properties.fit_columns ? "true" : "false" ?>;
+    document.getElementById("settings_enable_prerequisites").checked = <?!= board.properties.enable_prerequisites ? "true" : "false" ?>;
   });
   settingsDialog.on('shown.bs.modal', function (event) {
     document.getElementById('settings_list_name').focus();
@@ -518,7 +519,8 @@ function saveSettingsDialogAsync() {
     });
   }
   var fit_columns = document.getElementById("settings_fit_columns").checked;
-  google.script.run.withSuccessHandler(saveSettingsSuccess).withFailureHandler(showError).saveBoardSettings("<?= board.id ?>",lists,list_entry,list_exit,links,fit_columns);
+  var enable_prerequisites = document.getElementById("settings_enable_prerequisites").checked;
+  google.script.run.withSuccessHandler(saveSettingsSuccess).withFailureHandler(showError).saveBoardSettings("<?= board.id ?>",lists,list_entry,list_exit,links,fit_columns,enable_prerequisites);
   $('#settingsDialog').modal('hide');
 }
 
