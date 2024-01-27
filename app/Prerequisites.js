@@ -154,7 +154,7 @@ function updateTaskState(state, task) {
     state.due = !!task.due;
     changes = true;
   }
-  var prerequisiteNames = task.notes.match(/(?<=\{).+?(?=\})/g);
+  var prerequisiteNames = task.notes?.match(/(?<=\{).+?(?=\})/g);
   if (!prerequisiteNames) prerequisiteNames = [];
   if (JSON.stringify(state.prerequisiteNames) != JSON.stringify(prerequisiteNames)) {
     state.prerequisiteNames = prerequisiteNames;
