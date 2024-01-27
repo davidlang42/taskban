@@ -111,7 +111,7 @@ function importRow(o, map) {
   if (i != ROW_LENGTH) {
     throw new Error('Import row was the wrong length (' + i + ' != ' + ROW_LENGTH + ')');
   }
-  return o;
+  return task;
 }
 
 function headerRow(exclude_read_only) {
@@ -151,7 +151,7 @@ function processMappedColumn(o, expected_index, map, task, field) {
 function headerMap(header) {
   var map_from_expected_column_index_to_actual_column_index = [];
   var i = 0;
-  for (const expected in headerRow(true)) {
+  for (const expected of headerRow(true)) {
     map_from_expected_column_index_to_actual_column_index[i++] = expected ? header.indexOf(expected) : -1;
   }
   return map_from_expected_column_index_to_actual_column_index;
@@ -160,7 +160,7 @@ function headerMap(header) {
 function invalidHeaders(header) {
   var invalid = [];
   var expected = headerRow();
-  for (const actual in header) {
+  for (const actual of header) {
     if (!expected.includes(actual)) {
       invalid.push(actual);
     }
