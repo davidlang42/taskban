@@ -864,11 +864,73 @@ function removeDueDatesCompletedAsync() {
   google.script.run.withSuccessHandler(clearCompletedSuccess).withFailureHandler(clearCompletedFailure).removeDueDatesCompleted("<?= board.id ?>", taskIds);
 }
 
+// import/export dialog
+
+function twoDigit(n) {
+  n = n.toString();
+  if (n.length == 1) {
+    return "0" + n;
+  } else {
+    return n;
+  }
+}
+
+function configureImportExportDialogEvents() {
+  $('#importExportDialog').on('show.bs.modal', function (event) {
+    var d = new Date();
+    document.getElementById("import_csv_file").value = null;
+    document.getElementById("export_file_name").value = `<?!= board.title.replace(/[^a-zA-Z0-9]/g, '') ?>_${d.getFullYear()}${twoDigit(d.getMonth() + 1)}${twoDigit(d.getDate())}_${twoDigit(d.getHours())}${twoDigit(d.getMinutes())}.csv`;
+  });
+}
+
+function importFromCsvAsync() {
+  var file = document.getElementById("import_csv_file").files[0];
+  if (file) {
+      var reader = new FileReader();
+      reader.readAsText(file, "UTF-8");
+      reader.onload = function (evt) {
+          google.script.run.withSuccessHandler(importSuccess).withFailureHandler(showError).importFromCsv("<?= board.id ?>",evt.target.result);
+          $('#importExportDialog').modal('hide');
+      }
+      reader.onerror = function (evt) {
+          showError("Error reading file");
+      }
+  } else {
+    alert("Please select a CSV file to import");
+  }
+}
+
+function importSuccess(response) {
+  alert(response);
+  loadTasksAsync(); // refresh
+}
+
+function exportToCsvAsync() {
+  var export_file_name = document.getElementById("export_file_name").value;
+  if (!export_file_name) {
+    alert("Export file name cannot be blank.");
+    return;
+  }
+  google.script.run.withSuccessHandler(exportSuccess).withFailureHandler(showError).withUserObject(export_file_name).exportToCsv("<?= board.id ?>");
+  $('#importExportDialog').modal('hide');
+}
+
+function exportSuccess(csv_file_data, export_file_name) {
+  const csv_file = new File([csv_file_data], export_file_name);
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(csv_file);
+  link.download = csv_file.name;
+  link.style.display = "none";
+  document.body.appendChild(link);
+  link.click();
+}
+
 // on load
 
 window.addEventListener("load", loadTasksAsync);
 window.addEventListener("load", configureEditDialogEvents);
 window.addEventListener("load", configureSettingsDialogEvents);
+window.addEventListener("load", configureImportExportDialogEvents);
 window.addEventListener("load", configureBoardEvents);
 window.addEventListener("load", focusFilter);
 </script>
