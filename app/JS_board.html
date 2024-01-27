@@ -742,19 +742,20 @@ function saveEditDialogAsync(action) {
     notes: document.getElementById('edit_notes').value,
     due: document.getElementById('edit_due').value
   };
-  if(!changes.title) {
-    alert('Task title cannot be blank.');
-    return;
-  }
-  if(changes.title.includes("<?= LIST_PREFIX ?>") || changes.title.includes("<?= LIST_SUFFIX ?>")) {
-    alert('Task title cannot include \'<?= LIST_PREFIX ?>\' or \'<?= LIST_SUFFIX ?>\'.');
-    return;
-  }
   if(action=='delete') {
     if(!window.confirm("Are you sure you want to delete '"+changes.title+"'?")) return;
     changes.deleted = true;
-  } else if(action=='complete') {
-    changes.list = "<?= board.properties.list_exit ?>";
+  } else {
+    if(action=='complete') changes.list = "<?= board.properties.list_exit ?>";
+    // only check title is valid if we aren't deleting it
+    if(!changes.title) {
+      alert('Task title cannot be blank.');
+      return;
+    }
+    if(changes.title.includes("<?= LIST_PREFIX ?>") || changes.title.includes("<?= LIST_SUFFIX ?>")) {
+      alert('Task title cannot include \'<?= LIST_PREFIX ?>\' or \'<?= LIST_SUFFIX ?>\'.');
+      return;
+    }
   }
   updateTaskElement(changes,true); // add/save (optimistically) in dom immediately, to be updated again on callback
   if (changes.id) {
