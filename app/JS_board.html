@@ -878,6 +878,7 @@ function twoDigit(n) {
 function configureImportExportDialogEvents() {
   $('#importExportDialog').on('show.bs.modal', function (event) {
     var d = new Date();
+    document.getElementById("import_csv_file").value = null;
     document.getElementById("export_file_name").value = `<?!= board.title.replace(/[^a-zA-Z0-9]/g, '') ?>_${d.getFullYear()}${twoDigit(d.getMonth() + 1)}${twoDigit(d.getDate())}_${twoDigit(d.getHours())}${twoDigit(d.getMinutes())}.csv`;
   });
 }

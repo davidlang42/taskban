@@ -20,29 +20,43 @@ function exportToCsv(boardId) {
 
 //client call
 function importFromCsv(boardId, csvFile) {
+  // load csv
   var warnings = [];
   if (!csvFile.length) throw Error("CSV file was empty");
   var table = fromCSV(csvFile);
   if (table.length < 2) throw Error("CSV file only contained a header row");
   if (!table[0].length) throw Error("CSV file did not contain any columns");
+  // parse headers
   var invalid = invalidHeaders(table[0]);
   if (invalid.length == table[0].length) throw Error("CSV did not contain any matching column headers");
   if (invalid.length) {
     warnings.push("Invalid columns have been ignored (" + invalid.join(", ") + ")");
   }
   var map = headerMap(table[0]);
+  // parse tasks
   var tasks = [];
   for (var i=1; i < table.length; i++) {
-    var task = importRow(table[i], map);
-    task.status = task.completed ? "completed" : "needsAction";
-    tasks.push(task);
+    if (table[i].length == map.length) {
+      var task = importRow(table[i], map);
+      task.status = task.completed ? "completed" : "needsAction";
+      tasks.push(task);
+    }
   }
-  return JSON.stringify(tasks);
+  // add/update tasks
   var count_updated = 0;
   var count_added = 0;
-  //TODO actually save tasks
-  //TODO if id is not found, add new and warn if not blank, but maintain parentId links with the set name
-  //TODO move() rather than set: parent, position (if the values differ from the return value of patch/insert)
+  for (const task of tasks) {
+    if (task.id) {
+      var result = Tasks.Tasks.patch(task, boardId, task.id);
+      count_updated += 1;
+      if (task.parent != result.parent)
+        Tasks.Tasks.move(boardId, task.id, {parent: task.parent});
+    } else {
+      Tasks.Tasks.insert(task, boardId, {parent: task.parent});
+      count_added += 1;
+    }
+  }
+  // send response
   var response = "Successfully ";
   if (count_added > 0) {
     if (count_updated > 0) {
@@ -62,7 +76,7 @@ function importFromCsv(boardId, csvFile) {
   return response;
 }
 
-const ROW_LENGTH = 11; // fields not included: kind, etag, selfLink
+const ROW_LENGTH = 11; // irrelevant fields not included: kind, etag, selfLink
 
 function exportRow(task) {
   var o = new Array(ROW_LENGTH);
@@ -74,7 +88,7 @@ function exportRow(task) {
   o[i++]=task.notes;
   o[i++]=formatCsvDate(task.due);
   o[i++]=task.updated;
-  o[i++]=formatCsvDate(task.completed);
+  o[i++]=task.completed;
   o[i++]=task.deleted ?? false;
   o[i++]=task.hidden ?? false;
   var links = task.links;
@@ -102,9 +116,7 @@ function importRow(o, map) {
     task.due = unformatCsvDate(task.due);
   }
   processMappedColumn(o, i++, map, task, 'updated');
-  if (processMappedColumn(o, i++, map, task, 'completed')) {
-    task.completed = unformatCsvDate(task.completed);
-  }
+  processMappedColumn(o, i++, map, task, 'completed');
   processMappedColumn(o, i++, map, task, 'deleted');
   processMappedColumn(o, i++, map, task, 'hidden');
   processMappedColumn(o, i++, map, task, 'links');
@@ -118,7 +130,7 @@ function headerRow(exclude_read_only) {
   var o = new Array(ROW_LENGTH);
   var i=0;
   o[i++]='ParentId';
-  o[i++]='Position';
+  o[i++]=exclude_read_only ? "" : 'Position'; // could support setting this in the future, but it has to be set by calling move()
   o[i++]='Title';
   o[i++]='Id';
   o[i++]='Notes';
