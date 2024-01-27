@@ -770,6 +770,13 @@ function enableSaveEdit() {
   document.getElementById('edit_save').disabled = false;
 }
 
+function clearDueDate() {
+  var edit_due = document.getElementById('edit_due');
+  edit_due.value = null;
+  enableSaveEdit();
+  edit_due.focus();
+}
+
 function addTaskFailure(error) {
   var newTasks = document.getElementsByClassName("newtask");
   for(const newTask of newTasks) {
