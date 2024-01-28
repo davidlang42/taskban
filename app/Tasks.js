@@ -3,8 +3,15 @@ const LIST_SUFFIX = ")";
 
 // client call
 function getAllTasks(boardId) {
+  return getAllTasksInternal(boardId, true); // updates prerequisites if enabled
+}
+
+function getAllTasksInternal(boardId, updatePrerequisitesIfEnabled) {
   var board = {id: boardId};
   loadBoardProperties(board);
+  if (updatePrerequisitesIfEnabled && board.properties.enable_prerequisites) {
+    runPrerequisiteUpdatesForBoard(boardId, false); // does nothing if already locked
+  }
   var result = {};
   var tasks = [];
   do {
@@ -21,7 +28,7 @@ function getAllTasks(boardId) {
 // client call
 function getManyTasks(boardId, taskIds) {
   var tasks = [];
-  for(const task of getAllTasks(boardId)) {
+  for(const task of getAllTasksInternal(boardId, false)) {
     if (taskIds.includes(task.id))
       tasks.push(task);
   }
@@ -154,9 +161,17 @@ function updateTask(boardId,changes,afterTaskId) {
   if (changes.id) {
     task = Tasks.Tasks.patch(changes, boardId, changes.id);
     if (afterTaskId)
-      task = Tasks.Tasks.move(boardId, changes.id, {previous: afterTaskId}); //FUTURE {parent:,previous:}
+      task = Tasks.Tasks.move(boardId, changes.id, {previous: afterTaskId}); //FUTURE {parent:}
   } else {
-    task = Tasks.Tasks.insert(changes, boardId, {previous: afterTaskId}); //FUTURE {parent:,previous:}
+    task = Tasks.Tasks.insert(changes, boardId, {previous: afterTaskId}); //FUTURE {parent:}
+  }
+  if (board.properties.enable_prerequisites) {
+    if (changes.status == "completed") { // might affect any task on this board
+      runPrerequisiteUpdatesForBoard(boardId, false); // does nothing if already locked
+      //TODO send any updates to the client
+    } else if ('notes' in changes) { // could only affect this task
+      //TODO check only this task
+    }
   }
   processTask(task, board);
   return task;

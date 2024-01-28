@@ -41,7 +41,7 @@ function runAllPrerequisiteUpdates() {
     loadBoardProperties(board);
     if (board.properties.enable_prerequisites) {
       try {
-        runPrerequisiteUpdatesForBoard(board.id, true);
+        runPrerequisiteUpdatesForBoard(board.id, true); // throws error if already locked
       } catch (err) {
         errors.push(err);
         errorBoards.push(board.title);
