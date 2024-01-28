@@ -3,8 +3,15 @@ const LIST_SUFFIX = ")";
 
 // client call
 function getAllTasks(boardId) {
+  return getAllTasksInternal(boardId, true); // updates prerequisites if enabled
+}
+
+function getAllTasksInternal(boardId, updatePrerequisitesIfEnabled) {
   var board = {id: boardId};
   loadBoardProperties(board);
+  if (updatePrerequisitesIfEnabled && board.properties.enable_prerequisites) {
+    runPrerequisiteUpdatesForBoard(boardId, false); // does nothing if already locked
+  }
   var result = {};
   var tasks = [];
   do {
@@ -21,7 +28,7 @@ function getAllTasks(boardId) {
 // client call
 function getManyTasks(boardId, taskIds) {
   var tasks = [];
-  for(const task of getAllTasks(boardId)) {
+  for(const task of getAllTasksInternal(boardId, false)) { // does not update prerequisites
     if (taskIds.includes(task.id))
       tasks.push(task);
   }
@@ -154,9 +161,24 @@ function updateTask(boardId,changes,afterTaskId) {
   if (changes.id) {
     task = Tasks.Tasks.patch(changes, boardId, changes.id);
     if (afterTaskId)
-      task = Tasks.Tasks.move(boardId, changes.id, {previous: afterTaskId}); //FUTURE {parent:,previous:}
+      task = Tasks.Tasks.move(boardId, changes.id, {previous: afterTaskId}); //FUTURE {parent:}
   } else {
-    task = Tasks.Tasks.insert(changes, boardId, {previous: afterTaskId}); //FUTURE {parent:,previous:}
+    task = Tasks.Tasks.insert(changes, boardId, {previous: afterTaskId}); //FUTURE {parent:}
+  }
+  if (board.properties.enable_prerequisites) {
+    if (changes.status == "completed") { // might affect any task on this board
+      var updated_tasks = runPrerequisiteUpdatesForBoard(boardId, false); // does nothing if already locked
+      if (updated_tasks && updated_tasks.length) {
+        updated_tasks.push(task);
+        for (const t of updated_tasks) {
+          processTask(t, board);
+        }
+        return updated_tasks;
+      }
+    } else if (!changes.deleted && 'notes' in changes) { // could only affect this task
+      var updated_task = runPrerequisiteUpdatesForTask(boardId, task);
+      if (updated_task) task = updated_task;
+    }
   }
   processTask(task, board);
   return task;

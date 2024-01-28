@@ -31,23 +31,97 @@ function newTaskState() {
   return { name: "", completed: false, due: false, prerequisiteNames: [] };
 }
 
+const PREREQUISITES_LOCK_PREFIX = "prerequisiteUpdates.";
+
 //TRIGGER: every 5 minutes (could probably handle every 1 min if needed)
-function runPrerequisiteUpdates() {
-  var now = new Date();
+function runAllPrerequisiteUpdates() {
+  var errors = [];
+  var errorBoards = [];
   for (const board of listBoards()) {
     loadBoardProperties(board);
     if (board.properties.enable_prerequisites) {
-      var state = loadPrerequisiteState(board.id);
-      var changes = updatePrerequisiteState(board.id, state);
-      if (changes || (!!state.nextDatePrerequisite && state.nextDatePrerequisite < now)) {
-        processPrerequisiteState(board.id, state);
+      try {
+        runPrerequisiteUpdatesForBoard(board.id, true); // throws error if already locked
+      } catch (err) {
+        errors.push(err);
+        errorBoards.push(board.title);
       }
-      storePrerequisiteState(board.id, state);
     }
+  }
+  if (errors.length) {
+    throw new AggregateError(errors, "Failed to run prerequisite updates for: " + errorBoards.join(", "));
+  }
+}
+
+function runPrerequisiteUpdatesForBoard(boardId, errorIfLocked) {
+  if (lock(PREREQUISITES_LOCK_PREFIX + boardId)) {
+    var state = loadPrerequisiteState(boardId);
+    var changes = updatePrerequisiteState(boardId, state);
+    var processed = null;
+    if (changes || (!!state.nextDatePrerequisite && state.nextDatePrerequisite < new Date())) {
+      processed = processPrerequisiteState(boardId, state);
+    }
+    storePrerequisiteState(boardId, state);
+    unlock(PREREQUISITES_LOCK_PREFIX + boardId);
+    return processed;
+  } else if (errorIfLocked) {
+    throw Error("Cannot run prerequisite updates for locked board: " + boardId);
+  }
+}
+
+function runPrerequisiteUpdatesForTask(boardId, task) {
+  // lock not required because we aren't changing the prerequisite state
+  // instead we just shortcut to check if *this* task is ready
+  // but not for duplicate tasks or missing tasks, as these could depend on other tasks (if we detect that, we assume not ready)
+  // technically 'ready' might also be wrong if a task has recently changed been uncompleted, but this seems like a very minor edge case
+  if (!!task.due) return; // due date already set
+  /* from: updatePrerequisiteState() */
+  var prerequisiteNames = task.notes?.match(/(?<=\{).+?(?=\})/g);
+  if (!prerequisiteNames || !prerequisiteNames.length) return; // no prerequisites to check
+  var state = loadPrerequisiteState(boardId);
+  /* from: processPrerequisiteState() */
+  // create lookups
+  var completedByName = {};
+  var duplicateNames = [];
+  for (const id in state.taskStateById) {
+    const taskState = state.taskStateById[id];
+    if (completedByName[taskState.name] != null) {
+      duplicateNames.push(taskState.name);
+    }
+    completedByName[taskState.name] = taskState.completed;
+  }
+  // check if tasks are ready to action
+  var now = new Date();
+  var ready = true;
+  var missing = [];
+  var duplicates = [];
+  for (const prerequisiteName of prerequisiteNames) {
+    var completed = completedByName[prerequisiteName];
+    if (duplicateNames.includes(prerequisiteName)) {
+      duplicates.push(prerequisiteName);
+    } else if (completed == null) {
+      var possible_date = Date.parse(prerequisiteName);
+      if (!isNaN(possible_date)) {
+        var d = new Date(possible_date);
+        if (d > now) {
+          // waiting on future date
+          ready = false;
+        }
+      } else {
+        missing.push(prerequisiteName);
+      }
+    } else if (!completed) {
+      ready = false;
+    }
+  }
+  if (ready && duplicates.length == 0 && missing.length == 0) {
+    // setTaskDueWithMessage() won't call a task read because we already have it
+    return setTaskDueWithMessage(boardId, task.id, "Prerequisite tasks complete: " + prerequisiteNames.join(", "), task);
   }
 }
 
 function processPrerequisiteState(boardId, state) {
+  var processed = [];
   // create lookups
   var completedByName = {};
   var unusedCompletedIdsByName = {};
@@ -62,7 +136,7 @@ function processPrerequisiteState(boardId, state) {
       unusedCompletedIdsByName[taskState.name] = id;
     }
   }
-  // check if tasks are ready to action  
+  // check if tasks are ready to action
   var now = new Date();
   var nextDate = null;
   for (const id in state.taskStateById) {
@@ -98,11 +172,11 @@ function processPrerequisiteState(boardId, state) {
     if (!taskState.due) {
       // setTaskDueWithMessage() calls a task read, therefore only call if it might actually be useful
       if (duplicates.length > 0) {
-        setTaskDueWithMessage(boardId, id, "Prerequisite tasks have duplicate names: " + duplicates.join(", "));
+        processed.push(setTaskDueWithMessage(boardId, id, "Prerequisite tasks have duplicate names: " + duplicates.join(", ")));
       } else if (missing.length > 0) {
-        setTaskDueWithMessage(boardId, id, "Could not find prerequisite tasks: " + missing.join(", "));
+        processed.push(setTaskDueWithMessage(boardId, id, "Could not find prerequisite tasks: " + missing.join(", ")));
       } else if (ready) {
-        setTaskDueWithMessage(boardId, id, "Prerequisite tasks complete: " + taskState.prerequisiteNames.join(", "));
+        processed.push(setTaskDueWithMessage(boardId, id, "Prerequisite tasks complete: " + taskState.prerequisiteNames.join(", ")));
       }
     }
   }
@@ -111,19 +185,20 @@ function processPrerequisiteState(boardId, state) {
     const id = unusedCompletedIdsByName[name];
     delete state.taskStateById[id];
   }
+  return processed;
 }
 
 const MAX_NOTES_LENGTH = 8000;
 
-function setTaskDueWithMessage(boardId, taskId, message) {
-  var t = Tasks.Tasks.get(boardId, taskId);
+function setTaskDueWithMessage(boardId, taskId, message, already_up_to_date_task) {
+  var t = already_up_to_date_task ?? Tasks.Tasks.get(boardId, taskId);
   if (!t.due) {
     var changes = { due: formatDateTasks(new Date()) };
     var new_notes = message + "\n///\n" + t.notes;
     if (new_notes.length <= MAX_NOTES_LENGTH) {
       changes.notes = new_notes; // only add to notes if it fits within max length
     }
-    Tasks.Tasks.patch(changes, boardId, taskId);
+    return Tasks.Tasks.patch(changes, boardId, taskId);
   }
 }
 
