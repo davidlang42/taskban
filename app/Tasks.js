@@ -28,7 +28,7 @@ function getAllTasksInternal(boardId, updatePrerequisitesIfEnabled) {
 // client call
 function getManyTasks(boardId, taskIds) {
   var tasks = [];
-  for(const task of getAllTasksInternal(boardId, false)) {
+  for(const task of getAllTasksInternal(boardId, false)) { // does not update prerequisites
     if (taskIds.includes(task.id))
       tasks.push(task);
   }
@@ -169,8 +169,9 @@ function updateTask(boardId,changes,afterTaskId) {
     if (changes.status == "completed") { // might affect any task on this board
       runPrerequisiteUpdatesForBoard(boardId, false); // does nothing if already locked
       //TODO send any updates to the client
-    } else if ('notes' in changes) { // could only affect this task
-      //TODO check only this task
+    } else if (!changes.deleted && 'notes' in changes) { // could only affect this task
+      var updated_task = runPrerequisiteUpdatesForTask(boardId, task);
+      if (updated_task) task = updated_task;
     }
   }
   processTask(task, board);

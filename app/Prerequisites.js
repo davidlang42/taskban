@@ -67,6 +67,57 @@ function runPrerequisiteUpdatesForBoard(boardId, errorIfLocked) {
   }
 }
 
+function runPrerequisiteUpdatesForTask(boardId, task) {
+  // lock not required because we aren't changing the prerequisite state
+  // instead we just shortcut to check if *this* task is ready
+  // but not for duplicate tasks or missing tasks, as these could depend on other tasks (if we detect that, we assume not ready)
+  // technically 'ready' might also be wrong if a task has recently changed been uncompleted, but this seems like a very minor edge case
+  if (!!task.due) return; // due date already set
+  /* from: updatePrerequisiteState() */
+  var prerequisiteNames = task.notes?.match(/(?<=\{).+?(?=\})/g);
+  if (!prerequisiteNames || !prerequisiteNames.length) return; // no prerequisites to check
+  var state = loadPrerequisiteState(boardId);
+  /* from: processPrerequisiteState() */
+  // create lookups
+  var completedByName = {};
+  var duplicateNames = [];
+  for (const id in state.taskStateById) {
+    const taskState = state.taskStateById[id];
+    if (completedByName[taskState.name] != null) {
+      duplicateNames.push(taskState.name);
+    }
+    completedByName[taskState.name] = taskState.completed;
+  }
+  // check if tasks are ready to action
+  var now = new Date();
+  var ready = true;
+  var missing = [];
+  var duplicates = [];
+  for (const prerequisiteName of prerequisiteNames) {
+    var completed = completedByName[prerequisiteName];
+    if (duplicateNames.includes(prerequisiteName)) {
+      duplicates.push(prerequisiteName);
+    } else if (completed == null) {
+      var possible_date = Date.parse(prerequisiteName);
+      if (!isNaN(possible_date)) {
+        var d = new Date(possible_date);
+        if (d > now) {
+          // waiting on future date
+          ready = false;
+        }
+      } else {
+        missing.push(prerequisiteName);
+      }
+    } else if (!completed) {
+      ready = false;
+    }
+  }
+  if (ready && duplicates.length == 0 && missing.length == 0) {
+    // setTaskDueWithMessage() won't call a task read because we already have it
+    return setTaskDueWithMessage(boardId, task.id, "Prerequisite tasks complete: " + prerequisiteNames.join(", "), task);
+  }
+}
+
 function processPrerequisiteState(boardId, state) {
   // create lookups
   var completedByName = {};
@@ -82,7 +133,7 @@ function processPrerequisiteState(boardId, state) {
       unusedCompletedIdsByName[taskState.name] = id;
     }
   }
-  // check if tasks are ready to action  
+  // check if tasks are ready to action
   var now = new Date();
   var nextDate = null;
   for (const id in state.taskStateById) {
@@ -135,15 +186,15 @@ function processPrerequisiteState(boardId, state) {
 
 const MAX_NOTES_LENGTH = 8000;
 
-function setTaskDueWithMessage(boardId, taskId, message) {
-  var t = Tasks.Tasks.get(boardId, taskId);
+function setTaskDueWithMessage(boardId, taskId, message, already_up_to_date_task) {
+  var t = already_up_to_date_task ?? Tasks.Tasks.get(boardId, taskId);
   if (!t.due) {
     var changes = { due: formatDateTasks(new Date()) };
     var new_notes = message + "\n///\n" + t.notes;
     if (new_notes.length <= MAX_NOTES_LENGTH) {
       changes.notes = new_notes; // only add to notes if it fits within max length
     }
-    Tasks.Tasks.patch(changes, boardId, taskId);
+    return Tasks.Tasks.patch(changes, boardId, taskId);
   }
 }
 
