@@ -57,11 +57,13 @@ function runPrerequisiteUpdatesForBoard(boardId, errorIfLocked) {
   if (lock(PREREQUISITES_LOCK_PREFIX + boardId)) {
     var state = loadPrerequisiteState(boardId);
     var changes = updatePrerequisiteState(boardId, state);
+    var processed = null;
     if (changes || (!!state.nextDatePrerequisite && state.nextDatePrerequisite < new Date())) {
-      processPrerequisiteState(boardId, state);
+      processed = processPrerequisiteState(boardId, state);
     }
     storePrerequisiteState(boardId, state);
     unlock(PREREQUISITES_LOCK_PREFIX + boardId);
+    return processed;
   } else if (errorIfLocked) {
     throw Error("Cannot run prerequisite updates for locked board: " + boardId);
   }
@@ -119,6 +121,7 @@ function runPrerequisiteUpdatesForTask(boardId, task) {
 }
 
 function processPrerequisiteState(boardId, state) {
+  var processed = [];
   // create lookups
   var completedByName = {};
   var unusedCompletedIdsByName = {};
@@ -169,11 +172,11 @@ function processPrerequisiteState(boardId, state) {
     if (!taskState.due) {
       // setTaskDueWithMessage() calls a task read, therefore only call if it might actually be useful
       if (duplicates.length > 0) {
-        setTaskDueWithMessage(boardId, id, "Prerequisite tasks have duplicate names: " + duplicates.join(", "));
+        processed.push(setTaskDueWithMessage(boardId, id, "Prerequisite tasks have duplicate names: " + duplicates.join(", ")));
       } else if (missing.length > 0) {
-        setTaskDueWithMessage(boardId, id, "Could not find prerequisite tasks: " + missing.join(", "));
+        processed.push(setTaskDueWithMessage(boardId, id, "Could not find prerequisite tasks: " + missing.join(", ")));
       } else if (ready) {
-        setTaskDueWithMessage(boardId, id, "Prerequisite tasks complete: " + taskState.prerequisiteNames.join(", "));
+        processed.push(setTaskDueWithMessage(boardId, id, "Prerequisite tasks complete: " + taskState.prerequisiteNames.join(", ")));
       }
     }
   }
@@ -182,6 +185,7 @@ function processPrerequisiteState(boardId, state) {
     const id = unusedCompletedIdsByName[name];
     delete state.taskStateById[id];
   }
+  return processed;
 }
 
 const MAX_NOTES_LENGTH = 8000;

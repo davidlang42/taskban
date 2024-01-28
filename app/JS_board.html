@@ -790,7 +790,13 @@ function addTaskFailure(error) {
 function updateTaskSuccess(task,taskId) {
   var ele = document.getElementById(taskId);
   if(ele) removeClass(ele,"saving");
-  if(task) updateTaskElement(task);
+  if (Array.isArray(task)) {
+    for (const t of task) {
+      updateTaskElement(t);
+    }
+  } else if (task) {
+    updateTaskElement(task);
+  }
 }
 
 function updateTaskFailure(error,taskId) {

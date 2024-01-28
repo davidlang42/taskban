@@ -167,8 +167,14 @@ function updateTask(boardId,changes,afterTaskId) {
   }
   if (board.properties.enable_prerequisites) {
     if (changes.status == "completed") { // might affect any task on this board
-      runPrerequisiteUpdatesForBoard(boardId, false); // does nothing if already locked
-      //TODO send any updates to the client
+      var updated_tasks = runPrerequisiteUpdatesForBoard(boardId, false); // does nothing if already locked
+      if (updated_tasks && updated_tasks.length) {
+        updated_tasks.push(task);
+        for (const t of updated_tasks) {
+          processTask(t, board);
+        }
+        return updated_tasks;
+      }
     } else if (!changes.deleted && 'notes' in changes) { // could only affect this task
       var updated_task = runPrerequisiteUpdatesForTask(boardId, task);
       if (updated_task) task = updated_task;
