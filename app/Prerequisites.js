@@ -58,7 +58,7 @@ function runPrerequisiteUpdatesForBoard(boardId, errorIfLocked) {
     var state = loadPrerequisiteState(boardId);
     var changes = updatePrerequisiteState(boardId, state);
     var processed = null;
-    if (changes || (!!state.nextDatePrerequisite && state.nextDatePrerequisite < new Date())) {
+    if (changes || (!!state.nextDatePrerequisite && state.nextDatePrerequisite < (new Date()).toString())) {
       processed = processPrerequisiteState(boardId, state);
     }
     storePrerequisiteState(boardId, state);
