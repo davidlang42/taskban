@@ -24,7 +24,7 @@ function clearPrerequisiteStates() {
 }
 
 function newPrerequisiteState() {
-  return { lastUpdated: null, taskStateById: {} };
+  return { lastUpdated: null, nextDatePrerequisite: null, taskStateById: {} };
 }
 
 function newTaskState() {
@@ -33,12 +33,13 @@ function newTaskState() {
 
 //TRIGGER: every 5 minutes (could probably handle every 1 min if needed)
 function runPrerequisiteUpdates() {
+  var now = new Date();
   for (const board of listBoards()) {
     loadBoardProperties(board);
     if (board.properties.enable_prerequisites) {
       var state = loadPrerequisiteState(board.id);
       var changes = updatePrerequisiteState(board.id, state);
-      if (changes) {
+      if (changes || (!!state.nextDatePrerequisite && state.nextDatePrerequisite < now)) {
         processPrerequisiteState(board.id, state);
       }
       storePrerequisiteState(board.id, state);
@@ -61,7 +62,9 @@ function processPrerequisiteState(boardId, state) {
       unusedCompletedIdsByName[taskState.name] = id;
     }
   }
-  // check if tasks are ready to action
+  // check if tasks are ready to action  
+  var now = new Date();
+  var nextDate = null;
   for (const id in state.taskStateById) {
     const taskState = state.taskStateById[id];
     if (!taskState.prerequisiteNames.length) continue;
@@ -74,11 +77,24 @@ function processPrerequisiteState(boardId, state) {
       if (duplicateNames.includes(prerequisiteName)) {
         duplicates.push(prerequisiteName);
       } else if (completed == null) {
-        missing.push(prerequisiteName);
+        var possible_date = Date.parse(prerequisiteName);
+        if (!isNaN(possible_date)) {
+          var d = new Date(possible_date);
+          if (d > now) {
+            // waiting on future date
+            ready = false;
+            if (!nextDate || nextDate > d) {
+              nextDate = d;
+            }
+          }
+        } else {
+          missing.push(prerequisiteName);
+        }
       } else if (!completed) {
         ready = false;
       }
     }
+    state.nextDatePrerequisite = nextDate;
     if (!taskState.due) {
       // setTaskDueWithMessage() calls a task read, therefore only call if it might actually be useful
       if (duplicates.length > 0) {
