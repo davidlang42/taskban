@@ -31,19 +31,39 @@ function newTaskState() {
   return { name: "", completed: false, due: false, prerequisiteNames: [] };
 }
 
+const PREREQUISITES_LOCK_PREFIX = "prerequisiteUpdates.";
+
 //TRIGGER: every 5 minutes (could probably handle every 1 min if needed)
-function runPrerequisiteUpdates() {
-  var now = new Date();
+function runAllPrerequisiteUpdates() {
+  var errors = [];
+  var errorBoards = [];
   for (const board of listBoards()) {
     loadBoardProperties(board);
     if (board.properties.enable_prerequisites) {
-      var state = loadPrerequisiteState(board.id);
-      var changes = updatePrerequisiteState(board.id, state);
-      if (changes || (!!state.nextDatePrerequisite && state.nextDatePrerequisite < now)) {
-        processPrerequisiteState(board.id, state);
+      try {
+        runPrerequisiteUpdatesForBoard(board.id, true);
+      } catch (err) {
+        errors.push(err);
+        errorBoards.push(board.title);
       }
-      storePrerequisiteState(board.id, state);
     }
+  }
+  if (errors.length) {
+    throw new AggregateError(errors, "Failed to run prerequisite updates for: " + errorBoards.join(", "));
+  }
+}
+
+function runPrerequisiteUpdatesForBoard(boardId, errorIfLocked) {
+  if (lock(PREREQUISITES_LOCK_PREFIX + boardId)) {
+    var state = loadPrerequisiteState(boardId);
+    var changes = updatePrerequisiteState(boardId, state);
+    if (changes || (!!state.nextDatePrerequisite && state.nextDatePrerequisite < new Date())) {
+      processPrerequisiteState(boardId, state);
+    }
+    storePrerequisiteState(boardId, state);
+    unlock(PREREQUISITES_LOCK_PREFIX + boardId);
+  } else if (errorIfLocked) {
+    throw Error("Cannot run prerequisite updates for locked board: " + boardId);
   }
 }
 
