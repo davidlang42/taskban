@@ -18,7 +18,7 @@ function doGet(e) {
       if (e.parameter.redirect)
         return redirect(INTERNAL_URL + "?b=" + board.title.replace(/ /g,"-"));
       else
-        return uiBoard(board, boards);
+        return uiBoard(board, boards, e.parameter.filter, e.parameter.edit, e.parameter.add);
     }
   }
   if (e.parameter.redirect)
@@ -27,10 +27,13 @@ function doGet(e) {
     return uiList(new Date(), boards);
 }
 
-function uiBoard(board, boards) {
+function uiBoard(board, boards, initial_filter, initial_edit, initial_add) {
   const html = HtmlService.createTemplateFromFile("UI_board");
   html.board = board;
   html.boards = boards;
+  html.initial_filter = initial_filter;
+  html.initial_edit = initial_edit;
+  html.initial_add = initial_add;
   return html.evaluate().setTitle(board.title+TITLE_SUFFIX).addMetaTag("viewport", "width=device-width, initial-scale=1").setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 

@@ -1,5 +1,7 @@
 <?
 // inputs: board = taskList
+//         initial_edit (optional task id)
+//         initial_add (optional list name)
 ?>
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.10.2/Sortable.min.js" integrity="sha256-8Ww0c1qKDMdHT2+3s3369kzSXcgIrvqzSwzjdZ5qHDs=" crossorigin="anonymous"></script>
 <script>
@@ -638,7 +640,6 @@ function matchNewTaskByData(task) {
 function configureEditDialogEvents() {
   var editDialog = $('#editDialog');
   editDialog.on('show.bs.modal', function (event) {
-    var id = $(event.relatedTarget).data('id');
     document.getElementById('edit_loading').style.display = "initial";
     document.getElementById('edit_body').style.display = "none";
     document.getElementById('edit_complete').style.display = "none";
@@ -646,14 +647,27 @@ function configureEditDialogEvents() {
     var edit_save = document.getElementById('edit_save');
     edit_save.style.display = "initial";
     edit_save.disabled = true;
+    var id = $(event.relatedTarget).data('id');
+    var list = $(event.relatedTarget).data('list');
+    if (!id && !list) {
+      // initial action
+      <? if (initial_edit) { ?>
+        id = "<?= initial_edit ?>";
+      <? } else if (initial_add) { ?>
+        list = "<?= initial_add ?>";
+      <? } else { ?>
+        openEditDialogFailure("Missing edit id and add list");
+        return;
+      <? } ?>
+    }
     if (id) {
       // edit
       document.getElementById('dialog_title').innerHTML = "Edit task";
       edit_save.innerHTML = "Save changes";
       google.script.run.withSuccessHandler(openEditDialogSuccess).withFailureHandler(openEditDialogFailure).getTask("<?= board.id ?>",id);
+      pushActionUrl('edit', id);
     } else {
       // add
-      var list = $(event.relatedTarget).data('list');
       document.getElementById('dialog_title').innerHTML = "Add task";
       edit_save.innerHTML = "Add new task";
       openEditDialogSuccess({
@@ -662,6 +676,7 @@ function configureEditDialogEvents() {
         title:"",
         notes:""
       });
+      pushActionUrl('add', list);
     }
   });
   editDialog.on('shown.bs.modal', function (event) {
@@ -671,6 +686,7 @@ function configureEditDialogEvents() {
     var edit_save = document.getElementById('edit_save');
     if (!edit_save.disabled && !confirm('Are you sure you want to close without saving?'))
       e.preventDefault();
+    pushActionUrl();
   });
   $('.save-on-enter').keypress(function (event) {
     if (event.keyCode == 13) {
@@ -708,6 +724,23 @@ function configureEditDialogEvents() {
       }
     }
   });
+  <? if (initial_add || initial_edit) { ?>
+    editDialog.modal('show'); // initial action
+  <? } ?>
+}
+
+function pushActionUrl(action, value) {
+  var params = { b: "<?= encodeURIComponent(board.title.replace(/ /g,"-")) ?>" };
+  if (action) params[action] = value;
+  google.script.history.replace({}, params);
+  // https://stackoverflow.com/questions/40014127/window-postmessage-to-script-google-com-as-popup
+  if (window.parent.parent !== window.top) {
+    const query = new URLSearchParams();
+    for (const key in params) {
+      query.append(key, params[key])
+    }
+    window.top.postMessage(query.toString(), "*");
+  }
 }
 
 function openEditDialogSuccess(task) {
@@ -720,7 +753,12 @@ function openEditDialogSuccess(task) {
     document.getElementById('edit_delete').style.display = "initial";
   }
   document.getElementById('edit_id').value = task.id;
-  document.getElementById('edit_list').value = task.list;
+  var edit_list = document.getElementById('edit_list');
+  edit_list.value = task.list;
+  if (edit_list.value != task.list) {
+    // provided list wasn't a valid option
+    edit_list.value = "<?= board.properties.list_entry ?>";
+  }
   document.getElementById('edit_links').innerHTML = formatHtmlLinks(task.links);
   document.getElementById('edit_notes').value = task.notes;
   document.getElementById('edit_due').value = task.due;
