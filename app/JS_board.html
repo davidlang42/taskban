@@ -665,7 +665,7 @@ function configureEditDialogEvents() {
       document.getElementById('dialog_title').innerHTML = "Edit task";
       edit_save.innerHTML = "Save changes";
       google.script.run.withSuccessHandler(openEditDialogSuccess).withFailureHandler(openEditDialogFailure).getTask("<?= board.id ?>",id);
-      google.script.history.push({}, { b: "<?= encodeURIComponent(board.title.replace(/ /g,"-")) ?>", edit: id });
+      pushActionUrl('edit', id);
     } else {
       // add
       document.getElementById('dialog_title').innerHTML = "Add task";
@@ -676,7 +676,7 @@ function configureEditDialogEvents() {
         title:"",
         notes:""
       });
-      google.script.history.push({}, { b: "<?= encodeURIComponent(board.title.replace(/ /g,"-")) ?>", add: list });
+      pushActionUrl('add', list);
     }
   });
   editDialog.on('shown.bs.modal', function (event) {
@@ -686,7 +686,7 @@ function configureEditDialogEvents() {
     var edit_save = document.getElementById('edit_save');
     if (!edit_save.disabled && !confirm('Are you sure you want to close without saving?'))
       e.preventDefault();
-    google.script.history.push({}, { b: "<?= encodeURIComponent(board.title.replace(/ /g,"-")) ?>" });
+    pushActionUrl();
   });
   $('.save-on-enter').keypress(function (event) {
     if (event.keyCode == 13) {
@@ -727,6 +727,20 @@ function configureEditDialogEvents() {
   <? if (initial_add || initial_edit) { ?>
     editDialog.modal('show'); // initial action
   <? } ?>
+}
+
+function pushActionUrl(action, value) {
+  var params = { b: "<?= encodeURIComponent(board.title.replace(/ /g,"-")) ?>" };
+  if (action) params[action] = value;
+  google.script.history.replace({}, params);
+  // https://stackoverflow.com/questions/40014127/window-postmessage-to-script-google-com-as-popup
+  if (window.parent.parent !== window.top) {
+    const query = new URLSearchParams();
+    for (const key in params) {
+      query.append(key, params[key])
+    }
+    window.top.postMessage(query.toString(), "*");
+  }
 }
 
 function openEditDialogSuccess(task) {
