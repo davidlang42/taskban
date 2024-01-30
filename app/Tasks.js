@@ -149,7 +149,7 @@ function updateTask(boardId,changes,afterTaskId) {
     if(changes.list==board.properties.list_exit) {
       // when done, dont label. this is important for recurring tasks
       changes.status = "completed";
-      changes.completed = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd'T'HH:mm:ss'Z'");
+      changes.completed = formatDateTasks(new Date());
     } else {
       changes.list = includesIgnoreCase(board.properties.lists, changes.list); // to get correct case for list name
       if(changes.list!=board.properties.list_entry) addListToName(changes, changes.list); // when todo, dont label. it looks nicer
