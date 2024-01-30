@@ -58,7 +58,7 @@ function runPrerequisiteUpdatesForBoard(boardId, errorIfLocked) {
     var state = loadPrerequisiteState(boardId);
     var changes = updatePrerequisiteState(boardId, state);
     var processed = null;
-    if (changes || (!!state.nextDatePrerequisite && state.nextDatePrerequisite < (new Date()).toString())) {
+    if (changes || (!!state.nextDatePrerequisite && state.nextDatePrerequisite < formatDateTasks(new Date()))) {
       processed = processPrerequisiteState(boardId, state);
     }
     storePrerequisiteState(boardId, state);
@@ -168,7 +168,7 @@ function processPrerequisiteState(boardId, state) {
         ready = false;
       }
     }
-    state.nextDatePrerequisite = nextDate;
+    state.nextDatePrerequisite = formatDateTasks(nextDate);
     if (!taskState.due) {
       // setTaskDueWithMessage() calls a task read, therefore only call if it might actually be useful
       if (duplicates.length > 0) {
