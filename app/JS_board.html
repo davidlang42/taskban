@@ -547,12 +547,6 @@ function loadTasksAsync() {
   google.script.run.withSuccessHandler(loadTasksSuccess).withFailureHandler(showError).getAllTasks("<?= board.id ?>");
 }
 
-function loadTaskAsync(taskId) {
-  var element = document.getElementById(taskId);
-  addClass(element, "loading");
-  google.script.run.withSuccessHandler(loadTaskSuccess).withFailureHandler(showError).getTask("<?= board.id ?>",taskId);
-}
-
 function loadListAsync(listName) {
   var list = document.getElementById(listName);
   var elements = list.getElementsByClassName("task");
@@ -638,6 +632,7 @@ function matchNewTaskByData(task) {
 // edit dialog
 
 function configureEditDialogEvents() {
+  //TODO Sortable.create(document.getElementById('edit_subtasks'));
   var editDialog = $('#editDialog');
   editDialog.on('show.bs.modal', function (event) {
     document.getElementById('edit_loading').style.display = "initial";
@@ -687,6 +682,12 @@ function configureEditDialogEvents() {
     if (!edit_save.disabled && !confirm('Are you sure you want to close without saving?'))
       e.preventDefault();
     pushActionUrl();
+  });
+  $('.add-subtask-on-enter').keypress(function (event) {
+    if (event.keyCode == 13) {
+      event.preventDefault();
+      $('#edit_subtask_add').click();
+    }
   });
   $('.save-on-enter').keypress(function (event) {
     if (event.keyCode == 13) {
@@ -759,12 +760,78 @@ function openEditDialogSuccess(task) {
     // provided list wasn't a valid option
     edit_list.value = "<?= board.properties.list_entry ?>";
   }
-  document.getElementById('edit_links').innerHTML = formatHtmlLinks(task.links);
+  var edit_links = document.getElementById('edit_links');
+  edit_links.innerHTML = formatHtmlLinks(task.links);
+  if (task.links && task.links.length) {
+    edit_links.style.display = 'inherit';
+  } else {
+    edit_links.style.display = 'none';
+  }
+  var edit_subtasks = document.getElementById('edit_subtasks');
+  edit_subtasks.innerHTML = "";
+  for (const subtask of task.subtasks) {
+    edit_subtasks.appendChild($(formatEditSubtask(subtask.title, subtask.id))[0]);
+  }
+  document.getElementById('edit_subtask_name').value = '';
   document.getElementById('edit_notes').value = task.notes;
   document.getElementById('edit_due').value = task.due;
   var edit_title = document.getElementById('edit_title');
   edit_title.value = task.title;
   edit_title.focus();
+}
+
+function formatEditSubtask(title, id) {
+  var html = "";
+  html += '<li class="list-group-item';
+  html += '">' + title;
+  html += '<span class="float-right">';
+  html += '<input type=hidden value="'+id+'">';
+  html += '<input type=hidden value="'+title+'">';
+  if (id) {
+    html += '<button type="button" class="btn btn-danger" aria-label="Close" onclick="editRemoveSubtaskId(\''+id+'\');">';
+  } else {
+    html += '<button type="button" class="btn btn-danger" aria-label="Close" onclick="editRemoveSubtaskTitle(\''+title+'\');">';
+  }
+  html += '<span aria-hidden="true">&times;</span>';
+  html += '</button>';
+  html += '</span>';
+  html += '</li>';
+  return html;
+}
+
+function editAddSubtask() {
+  var textbox = document.getElementById("edit_subtask_name");
+  if (!textbox.value) {
+    textbox.focus();
+    return alert('Subtask name cannot be blank.');
+  }
+  document.getElementById("edit_subtasks").appendChild($(formatEditSubtask(textbox.value,''))[0]);
+  textbox.value = "";
+  textbox.focus();
+}
+
+function editRemoveSubtaskId(id) {
+  var edit_subtasks = document.getElementById("edit_subtasks");
+  var items = edit_subtasks.getElementsByTagName("li");
+  for (var item of items) {
+    if (item.getElementsByTagName("input")[0].value == id) {
+      item.remove();
+      document.getElementById("edit_subtask_name").focus();
+      return;
+    }
+  }
+}
+
+function editRemoveSubtaskTitle(title) {
+  var edit_subtasks = document.getElementById("edit_subtasks");
+  var items = edit_subtasks.getElementsByTagName("li");
+  for (var item of items) {
+    if (item.getElementsByTagName("input")[1].value == title) {
+      item.remove();
+      document.getElementById("edit_subtask_name").focus();
+      return;
+    }
+  }
 }
 
 function openEditDialogFailure(error) {
@@ -773,6 +840,16 @@ function openEditDialogFailure(error) {
 }
 
 function saveEditDialogAsync(action) {
+  //TODO
+  // var settings_links = document.getElementById("settings_links");
+  // items = settings_links.getElementsByTagName("li");
+  // for (var item of items) {
+  //   const inputs = item.getElementsByTagName("input");
+  //   links.push({
+  //     label: inputs[0].value,
+  //     url: inputs[1].value
+  //   });
+  // }
   var changes = {
     id: document.getElementById('edit_id').value,
     list: document.getElementById('edit_list').value,

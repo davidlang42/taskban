@@ -77,9 +77,18 @@ function getTasksByDate(date_string) {
 function getTask(boardId, taskId) {
   var board = {id: boardId};
   loadBoardProperties(board);
-  var task = Tasks.Tasks.get(boardId, taskId);
-  processTask(task, board);
-  return task;
+  var main;
+  var subtasks = [];
+  //TODO dont process tasks until they are here
+  for(const task of getAllTasksInternal(boardId, false)) { // does not update prerequisites
+    if (task.id == taskId) {
+      main = task;
+    } else if (task.parent == taskId) {
+      subtasks.push(task);
+    }
+  }
+  main.subtasks = subtasks;
+  return main;
 }
 
 function extractListFromName(task) {
