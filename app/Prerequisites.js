@@ -55,17 +55,27 @@ function runAllPrerequisiteUpdates() {
 
 function runPrerequisiteUpdatesForBoard(boardId, errorIfLocked) {
   if (lock(PREREQUISITES_LOCK_PREFIX + boardId)) {
-    var state = loadPrerequisiteState(boardId);
-    var changes = updatePrerequisiteState(boardId, state);
     var processed = null;
-    if (changes || (!!state.nextDatePrerequisite && state.nextDatePrerequisite < formatDateTasks(new Date()))) {
-      processed = processPrerequisiteState(boardId, state);
+    try {
+      var state = loadPrerequisiteState(boardId);
+      var changes = updatePrerequisiteState(boardId, state);
+      if (changes || (!!state.nextDatePrerequisite && state.nextDatePrerequisite < formatDateTasks(new Date()))) {
+        processed = processPrerequisiteState(boardId, state);
+      }
+      storePrerequisiteState(boardId, state);
     }
-    storePrerequisiteState(boardId, state);
-    unlock(PREREQUISITES_LOCK_PREFIX + boardId);
+    finally {
+      unlock(PREREQUISITES_LOCK_PREFIX + boardId);
+    }
     return processed;
   } else if (errorIfLocked) {
     throw Error("Cannot run prerequisite updates for locked board: " + boardId);
+  }
+}
+
+function unlockAllPrerequisiteUpdates() {
+  for (const board of listBoards()) {
+    unlock(PREREQUISITES_LOCK_PREFIX + board.id);
   }
 }
 
@@ -168,7 +178,7 @@ function processPrerequisiteState(boardId, state) {
         ready = false;
       }
     }
-    state.nextDatePrerequisite = formatDateTasks(nextDate);
+    state.nextDatePrerequisite = !nextDate ? null : formatDateTasks(nextDate);
     if (!taskState.due) {
       // setTaskDueWithMessage() calls a task read, therefore only call if it might actually be useful
       if (duplicates.length > 0) {
