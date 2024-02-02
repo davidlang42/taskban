@@ -162,7 +162,7 @@ function processPrerequisiteState(boardId, state) {
       if (duplicateNames.includes(prerequisiteName)) {
         duplicates.push(prerequisiteName);
       } else if (completed == null) {
-        var possible_date = Date.parse(prerequisiteName);
+        var possible_date = Date.parse(prerequisiteName + " "); // without the space, a date without a time will be parsed in GMT rather than local time zone
         if (!isNaN(possible_date)) {
           var d = new Date(possible_date);
           if (d > now) {
