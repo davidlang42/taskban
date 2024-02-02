@@ -44,12 +44,12 @@ function runAllPrerequisiteUpdates() {
         runPrerequisiteUpdatesForBoard(board.id, true); // throws error if already locked
       } catch (err) {
         errors.push(err);
-        errorBoards.push(board.title);
+        errorBoards.push(board.title + " (" + err.toString() + ")");
       }
     }
   }
   if (errors.length) {
-    throw new AggregateError(errors, "Failed to run prerequisite updates for: " + errorBoards.join(", "));
+    throw new AggregateError(errors, errorBoards.join(", "));
   }
 }
 
@@ -59,7 +59,8 @@ function runPrerequisiteUpdatesForBoard(boardId, errorIfLocked) {
     try {
       var state = loadPrerequisiteState(boardId);
       var changes = updatePrerequisiteState(boardId, state);
-      if (changes || (!!state.nextDatePrerequisite && state.nextDatePrerequisite < formatDateTasks(new Date()))) {
+      var now = formatDateTasks(new Date());
+      if (changes || (!!state.nextDatePrerequisite && state.nextDatePrerequisite < now)) {
         processed = processPrerequisiteState(boardId, state);
       }
       storePrerequisiteState(boardId, state);
@@ -110,7 +111,7 @@ function runPrerequisiteUpdatesForTask(boardId, task) {
     if (duplicateNames.includes(prerequisiteName)) {
       duplicates.push(prerequisiteName);
     } else if (completed == null) {
-      var possible_date = Date.parse(prerequisiteName);
+      var possible_date = Date.parse(prerequisiteName + " "); // without the space, a date without a time will be parsed in GMT rather than local time zone
       if (!isNaN(possible_date)) {
         var d = new Date(possible_date);
         if (d > now) {
