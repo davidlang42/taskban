@@ -136,6 +136,7 @@ function processPrerequisiteState(boardId, state) {
   // create lookups
   var completedByName = {};
   var unusedCompletedIdsByName = {};
+  var deletedTaskIds = [];
   var duplicateNames = [];
   for (const id in state.taskStateById) {
     const taskState = state.taskStateById[id];
@@ -181,13 +182,16 @@ function processPrerequisiteState(boardId, state) {
     }
     state.nextDatePrerequisite = !nextDate ? null : formatDateTasks(nextDate);
     if (!taskState.due) {
-      // setTaskDueWithMessage() calls a task read, therefore only call if it might actually be useful
+      // getTaskOrAddToList() calls a task read, therefore only call if it might actually be useful
       if (duplicates.length > 0) {
-        processed.push(setTaskDueWithMessage(boardId, id, "Prerequisite tasks have duplicate names: " + duplicates.join(", ")));
+        var task = getTaskOrAddToList(boardId, id, deletedTaskIds);
+        if (task) processed.push(setTaskDueWithMessage(boardId, id, "Prerequisite tasks have duplicate names: " + duplicates.join(", "), task));
       } else if (missing.length > 0) {
-        processed.push(setTaskDueWithMessage(boardId, id, "Could not find prerequisite tasks: " + missing.join(", ")));
+        var task = getTaskOrAddToList(boardId, id, deletedTaskIds);
+        if (task) processed.push(setTaskDueWithMessage(boardId, id, "Could not find prerequisite tasks: " + missing.join(", "), task));
       } else if (ready) {
-        processed.push(setTaskDueWithMessage(boardId, id, "Prerequisite tasks complete: " + taskState.prerequisiteNames.join(", ")));
+        var task = getTaskOrAddToList(boardId, id, deletedTaskIds);
+        if (task) processed.push(setTaskDueWithMessage(boardId, id, "Prerequisite tasks complete: " + taskState.prerequisiteNames.join(", "), task));
       }
     }
   }
@@ -196,10 +200,22 @@ function processPrerequisiteState(boardId, state) {
     const id = unusedCompletedIdsByName[name];
     delete state.taskStateById[id];
   }
+  // remove deleted tasks
+  for (const id in deletedTaskIds) {
+    delete state.taskStateById[id];
+  }
   return processed;
 }
 
 const MAX_NOTES_LENGTH = 8000;
+
+function getTaskOrAddToList(boardId, taskId, listOfFailedTaskIds) {
+  try {
+    return Tasks.Tasks.get(boardId, taskId);
+  } catch (err) {
+    listOfFailedTaskIds.push(taskId);
+  }
+}
 
 function setTaskDueWithMessage(boardId, taskId, message, already_up_to_date_task) {
   var t = already_up_to_date_task ?? Tasks.Tasks.get(boardId, taskId);
