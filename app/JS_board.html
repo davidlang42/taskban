@@ -783,6 +783,9 @@ function openEditDialogSuccess(task) {
 function formatEditSubtask(existing_id, title) {
   var html = "";
   html += '<li class="list-group-item';
+  if (!existing_id) {
+    html += " subtask-added";
+  }
   html += '">' + title;
   html += '<span class="float-right">';  
   if (existing_id) {
@@ -807,6 +810,7 @@ function editAddSubtask() {
   document.getElementById("edit_subtasks").appendChild($(formatEditSubtask(null, textbox.value))[0]);
   textbox.value = "";
   textbox.focus();
+  enableSaveEdit();
 }
 
 function editExistingSubtaskToggle(id, class_name) {
@@ -816,6 +820,7 @@ function editExistingSubtaskToggle(id, class_name) {
     if (item.getElementsByTagName("input")[0].value == id) {
       item.classList.toggle(class_name);
       document.getElementById("edit_subtask_name").focus();
+      enableSaveEdit();
       return;
     }
   }
@@ -828,6 +833,7 @@ function editRemoveNewSubtask(title) {
     if (item.getElementsByTagName("input")[0].value == title) {
       item.remove();
       document.getElementById("edit_subtask_name").focus();
+      enableSaveEdit();
       return;
     }
   }
@@ -839,16 +845,22 @@ function openEditDialogFailure(error) {
 }
 
 function saveEditDialogAsync(action) {
-  //TODO
-  // var settings_links = document.getElementById("settings_links");
-  // items = settings_links.getElementsByTagName("li");
-  // for (var item of items) {
-  //   const inputs = item.getElementsByTagName("input");
-  //   links.push({
-  //     label: inputs[0].value,
-  //     url: inputs[1].value
-  //   });
-  // }
+  // check subtasks for changes
+  var added_subtasks = []; // titles
+  var unlinked_subtasks = []; // ids
+  var deleted_subtasks = []; // ids
+  var edit_subtasks = document.getElementById("edit_subtasks");
+  var items = edit_subtasks.getElementsByTagName("li");
+  for (var item of items) {
+    if (item.classList.contains("subtask-added")) {
+      added_subtasks.push(item.getElementsByTagName("input")[0].value);
+    } else if (item.classList.contains("subtask-unlinked")) {
+      unlinked_subtasks.push(item.getElementsByTagName("input")[0].value);
+    } else if (item.classList.contains("subtask-deleted")) {
+      deleted_subtasks.push(item.getElementsByTagName("input")[0].value);
+    }
+  }
+  // compile changes
   var changes = {
     id: document.getElementById('edit_id').value,
     list: document.getElementById('edit_list').value,
@@ -856,6 +868,9 @@ function saveEditDialogAsync(action) {
     notes: document.getElementById('edit_notes').value,
     due: document.getElementById('edit_due').value
   };
+  if (added_subtasks.length) changes.added_subtasks = added_subtasks;
+  if (unlinked_subtasks.length) changes.unlinked_subtasks = unlinked_subtasks;
+  if (deleted_subtasks.length) changes.deleted_subtasks = deleted_subtasks;
   if(action=='delete') {
     if(!window.confirm("Are you sure you want to delete '"+changes.title+"'?")) return;
     changes.deleted = true;

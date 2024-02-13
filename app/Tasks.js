@@ -170,9 +170,18 @@ function updateTask(boardId,changes,afterTaskId) {
   if (changes.id) {
     task = Tasks.Tasks.patch(changes, boardId, changes.id);
     if (afterTaskId)
-      task = Tasks.Tasks.move(boardId, changes.id, {previous: afterTaskId}); //FUTURE {parent:}
+      task = Tasks.Tasks.move(boardId, changes.id, {previous: afterTaskId}); //TODO {parent:}
   } else {
-    task = Tasks.Tasks.insert(changes, boardId, {previous: afterTaskId}); //FUTURE {parent:}
+    task = Tasks.Tasks.insert(changes, boardId, {previous: afterTaskId}); //TODO {parent:}
+  }
+  if (changes.added_subtasks) {
+    //TODO actually add
+  }
+  if (changes.unlinked_subtasks) {
+    //TODO actually unlink
+  }
+  if (changes.deleted_subtasks) {
+    //TODO actually delete
   }
   if (board.properties.enable_prerequisites) {
     if (changes.status == "completed") { // might affect any task on this board
