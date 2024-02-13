@@ -872,9 +872,16 @@ function saveEditDialogAsync(action) {
   if (unlinked_subtasks.length) changes.unlinked_subtasks = unlinked_subtasks;
   if (deleted_subtasks.length) changes.deleted_subtasks = deleted_subtasks;
   if(action=='delete') {
-    if(!window.confirm("Are you sure you want to delete '"+changes.title+"'?")) return;
+    if (deleted_subtasks.length) {
+      if(!window.confirm("Are you sure you want to delete '"+changes.title+"' and "+deleted_subtasks.length+" sub-task(s)?")) return;
+    } else {
+      if(!window.confirm("Are you sure you want to delete '"+changes.title+"'?")) return;
+    }
     changes.deleted = true;
   } else {
+    if (deleted_subtasks.length) {
+      if(!window.confirm("Are you sure you want to delete "+deleted_subtasks.length+" sub-task(s)?")) return;
+    } 
     if(action=='complete') changes.list = "<?= board.properties.list_exit ?>";
     // only check title is valid if we aren't deleting it
     if(!changes.title) {
