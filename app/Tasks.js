@@ -87,6 +87,7 @@ function getTask(boardId, taskId) {
       subtasks.push(task);
     }
   }
+  //TODO sort subtasks
   main.subtasks = subtasks;
   return main;
 }
