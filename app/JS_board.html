@@ -5,6 +5,17 @@
 ?>
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.10.2/Sortable.min.js" integrity="sha256-8Ww0c1qKDMdHT2+3s3369kzSXcgIrvqzSwzjdZ5qHDs=" crossorigin="anonymous"></script>
 <script>
+<? if (initial_edit) { ?>
+  var nextEdit = "<?= initial_edit ?>";
+  var nextAdd = null;
+<? } else if (initial_add) { ?>
+  var nextEdit = null;
+  var nextAdd = "<?= initial_add ?>";
+<? } else { ?>
+  var nextEdit = null;
+  var nextAdd = null;
+<? } ?>
+
 // drag & drop
 
 const drag = (event) => {
@@ -645,15 +656,17 @@ function configureEditDialogEvents() {
     var id = $(event.relatedTarget).data('id');
     var list = $(event.relatedTarget).data('list');
     if (!id && !list) {
-      // initial action
-      <? if (initial_edit) { ?>
-        id = "<?= initial_edit ?>";
-      <? } else if (initial_add) { ?>
-        list = "<?= initial_add ?>";
-      <? } else { ?>
+      // use global nextEdit/nextAdd action
+      if (nextEdit) {
+        id = nextEdit;
+        nextEdit = null;
+      } else if (nextAdd) {
+        list = nextAdd;
+        nextAdd = null;
+      } else {
         openEditDialogFailure("Missing edit id and add list");
         return;
-      <? } ?>
+      }
     }
     if (id) {
       // edit
@@ -725,9 +738,9 @@ function configureEditDialogEvents() {
       }
     }
   });
-  <? if (initial_add || initial_edit) { ?>
+  if (nextEdit || nextAdd) {
     editDialog.modal('show'); // initial action
-  <? } ?>
+  }
 }
 
 function pushActionUrl(action, value) {
@@ -786,7 +799,11 @@ function formatEditSubtask(existing_id, title) {
   if (!existing_id) {
     html += " subtask-added";
   }
-  html += '">' + title;
+  html += '">';
+  if (existing_id) {
+    html += '<button class="not-a-button btn-link hide-when-subtask-changed" onclick="editLaunchSubTask(\'' + existing_id + '\', \'' + title + '\');">' + title + '</button>';
+  }
+  html += '<span class="float-left hide-when-subtask-unchanged">' + title + '</span>';
   html += '<span class="float-right">';  
   if (existing_id) {
     html += '<input type=hidden value="'+existing_id+'">';
@@ -844,7 +861,13 @@ function openEditDialogFailure(error) {
   showError(error);
 }
 
-function saveEditDialogAsync(action) {
+function editLaunchSubTask(id, title) {
+  var edit_save = document.getElementById('edit_save');
+  if (!edit_save.disabled && !confirm('Would you like to save your changes to this task and edit \'' + title + '\'?')) return;
+  saveEditDialogAsync(null, id);
+}
+
+function saveEditDialogAsync(action, immediately_edit_another_task_id) {
   // check subtasks for changes
   var added_subtasks = []; // titles
   var unlinked_subtasks = []; // ids
@@ -900,6 +923,13 @@ function saveEditDialogAsync(action) {
     google.script.run.withSuccessHandler(updateTaskSuccess).withFailureHandler(addTaskFailure).addTask("<?= board.id ?>",changes);
   }
   document.getElementById('edit_save').disabled = true; // so that user isn't asked if they want to save changes
+  if (immediately_edit_another_task_id) {
+    $('#editDialog').one('hidden.bs.modal', function (e) {
+      // this only runs once
+      nextEdit = immediately_edit_another_task_id;
+      $('#editDialog').modal('show');
+    })
+  }
   $('#editDialog').modal('hide');
 }
 
