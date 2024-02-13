@@ -167,6 +167,7 @@ function updateTask(boardId,changes,afterTaskId) {
       changes.completed = null;
     }
   }
+  //TODO handle parent changing/already set but not included here
   var task;
   if (changes.id) {
     task = Tasks.Tasks.patch(changes, boardId, changes.id);
