@@ -239,7 +239,10 @@ function formatHtmlTask(task,optimistic) {
   if(!task.deleted && task.id) html += ' data-toggle="modal" data-target="#editDialog" data-id="'+task.id+'"';
   html += '>';
   html += '<p class="float-right task-due'+getClassNameForDate(task.due)+'">'+formatHtmlDate(task.due)+'</p>';
-  html += '<p class="lead font-weight-light task-title">'+task.title+'</p>';
+  if (task.parent) {
+    html += '<span class="lead font-weight-light">↳ </span>';
+  }
+  html += '<span class="lead font-weight-light task-title">'+task.title+'</span>';
   html += '</div>';
   html += '<div class="details">';
   html += '<p data-toggle="modal"';
