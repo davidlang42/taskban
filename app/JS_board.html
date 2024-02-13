@@ -770,7 +770,7 @@ function openEditDialogSuccess(task) {
   var edit_subtasks = document.getElementById('edit_subtasks');
   edit_subtasks.innerHTML = "";
   for (const subtask of task.subtasks) {
-    edit_subtasks.appendChild($(formatEditSubtask(subtask.title, subtask.id))[0]);
+    edit_subtasks.appendChild($(formatEditSubtask(subtask.id, subtask.title))[0]);
   }
   document.getElementById('edit_subtask_name').value = '';
   document.getElementById('edit_notes').value = task.notes;
@@ -780,20 +780,19 @@ function openEditDialogSuccess(task) {
   edit_title.focus();
 }
 
-function formatEditSubtask(title, id) {
+function formatEditSubtask(existing_id, title) {
   var html = "";
   html += '<li class="list-group-item';
   html += '">' + title;
-  html += '<span class="float-right">';
-  html += '<input type=hidden value="'+id+'">';
-  html += '<input type=hidden value="'+title+'">';
-  if (id) {
-    html += '<button type="button" class="btn btn-danger" aria-label="Close" onclick="editRemoveSubtaskId(\''+id+'\');">';
+  html += '<span class="float-right">';  
+  if (existing_id) {
+    html += '<input type=hidden value="'+existing_id+'">';
+    html += '<button type="button" class="btn btn-warning hide-when-subtask-deleted" onclick="editExistingSubtaskToggle(\''+existing_id+'\', \'subtask-unlinked\');">🔗</button>';
+    html += '<button type="button" class="btn btn-danger hide-when-subtask-unlinked" aria-label="Close" onclick="editExistingSubtaskToggle(\''+existing_id+'\', \'subtask-deleted\');">&times;</button>';
   } else {
-    html += '<button type="button" class="btn btn-danger" aria-label="Close" onclick="editRemoveSubtaskTitle(\''+title+'\');">';
+    html += '<input type=hidden value="'+title+'">';
+    html += '<button type="button" class="btn btn-danger" aria-label="Close" onclick="editRemoveNewSubtask(\''+title+'\');">&times;</button>';
   }
-  html += '<span aria-hidden="true">&times;</span>';
-  html += '</button>';
   html += '</span>';
   html += '</li>';
   return html;
@@ -805,28 +804,28 @@ function editAddSubtask() {
     textbox.focus();
     return alert('Subtask name cannot be blank.');
   }
-  document.getElementById("edit_subtasks").appendChild($(formatEditSubtask(textbox.value,''))[0]);
+  document.getElementById("edit_subtasks").appendChild($(formatEditSubtask(null, textbox.value))[0]);
   textbox.value = "";
   textbox.focus();
 }
 
-function editRemoveSubtaskId(id) {
+function editExistingSubtaskToggle(id, class_name) {
   var edit_subtasks = document.getElementById("edit_subtasks");
   var items = edit_subtasks.getElementsByTagName("li");
   for (var item of items) {
     if (item.getElementsByTagName("input")[0].value == id) {
-      item.remove();
+      item.classList.toggle(class_name);
       document.getElementById("edit_subtask_name").focus();
       return;
     }
   }
 }
 
-function editRemoveSubtaskTitle(title) {
+function editRemoveNewSubtask(title) {
   var edit_subtasks = document.getElementById("edit_subtasks");
   var items = edit_subtasks.getElementsByTagName("li");
   for (var item of items) {
-    if (item.getElementsByTagName("input")[1].value == title) {
+    if (item.getElementsByTagName("input")[0].value == title) {
       item.remove();
       document.getElementById("edit_subtask_name").focus();
       return;

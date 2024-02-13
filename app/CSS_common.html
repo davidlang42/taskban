@@ -66,6 +66,22 @@
     padding-right: 15px; // default was 20px
 }
 
+.subtask-unlinked .hide-when-subtask-unlinked {
+  visibility: hidden;
+}
+
+.subtask-deleted .hide-when-subtask-deleted {
+  visibility: hidden;
+}
+
+.subtask-deleted {
+  background-color: var(--danger);
+}
+
+.subtask-unlinked {
+  background-color: var(--warning);
+}
+
 <? if(board && board.properties.lists.length) { ?>
 .col-fit {
     -ms-flex: 0 0 <?= 100/board.properties.lists.length ?>%;
