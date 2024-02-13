@@ -90,8 +90,8 @@
             <p>Notes:<br><textarea id="edit_notes" rows="8" cols="60" style="resize: none;" class="form-control save-on-ctrl-enter save-on-ctrl-s done-on-ctrl-d del-on-ctrl-del" onInput="enableSaveEdit();"></textarea></p>
             <p id="edit_links" style="display: none;"></p>
             <ul id="edit_subtasks" class="list-group"></ul>
-            <p><input type=textbox id="edit_subtask_name" style="width:85%; vertical-align: bottom;" placeholder="New subtask" class="add-subtask-on-enter save-on-ctrl-enter save-on-ctrl-s done-on-ctrl-d del-on-ctrl-del">
-            <button type="button" class="btn btn-dark float-right" id="edit_subtask_add" onclick="editAddSubtask();">Add</button></p>
+            <p><input type=textbox id="edit_subtask_name" style="width:90%; vertical-align: bottom;" placeholder="New subtask" class="add-subtask-on-enter save-on-ctrl-enter save-on-ctrl-s done-on-ctrl-d del-on-ctrl-del">
+            <button type="button" class="btn btn-info float-right btn-sm" id="edit_subtask_add" onclick="editAddSubtask();">Add</button></p>
             <div><span>Due: &nbsp;&nbsp;<input type="date" id="edit_due" class="save-on-enter save-on-ctrl-enter save-on-ctrl-s done-on-ctrl-d del-on-ctrl-del" onChange="enableSaveEdit();">
             <button type="button" class="btn btn-link" id="edit_clear_due" onClick="clearDueDate();">&times;</button></span>
             <span class="float-right"><select id="edit_list" style="vertical-align: bottom;" class="save-on-enter save-on-ctrl-enter save-on-ctrl-s done-on-ctrl-d del-on-ctrl-del" onChange="enableSaveEdit();">

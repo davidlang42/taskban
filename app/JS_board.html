@@ -807,11 +807,11 @@ function formatEditSubtask(existing_id, title) {
   html += '<span class="float-right">';  
   if (existing_id) {
     html += '<input type=hidden value="'+existing_id+'">';
-    html += '<button type="button" class="btn btn-warning hide-when-subtask-deleted" onclick="editExistingSubtaskToggle(\''+existing_id+'\', \'subtask-unlinked\');">🔗</button>';
-    html += '<button type="button" class="btn btn-danger hide-when-subtask-unlinked" aria-label="Close" onclick="editExistingSubtaskToggle(\''+existing_id+'\', \'subtask-deleted\');">&times;</button>';
+    html += '<button type="button" class="btn btn-sm btn-warning hide-when-subtask-deleted" onclick="editExistingSubtaskToggle(\''+existing_id+'\', \'subtask-unlinked\');">🔗</button>';
+    html += '<button type="button" class="btn btn-sm btn-danger hide-when-subtask-unlinked" aria-label="Close" onclick="editExistingSubtaskToggle(\''+existing_id+'\', \'subtask-deleted\');">🗑️</button>';
   } else {
     html += '<input type=hidden value="'+title+'">';
-    html += '<button type="button" class="btn btn-danger" aria-label="Close" onclick="editRemoveNewSubtask(\''+title+'\');">&times;</button>';
+    html += '<button type="button" class="btn btn-sm btn-danger" aria-label="Close" onclick="editRemoveNewSubtask(\''+title+'\');">🗑️</button>';
   }
   html += '</span>';
   html += '</li>';
