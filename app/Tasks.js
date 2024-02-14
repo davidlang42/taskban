@@ -102,7 +102,7 @@ function getTask(boardId, taskId) {
   main.subtasks.sort(function(a,b) {
       if (a.position > b.position) return 1;
       if (a.position < b.position) return -1;
-      return 0
+      return 0;
   });
   return main;
 }

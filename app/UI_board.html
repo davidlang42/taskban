@@ -102,7 +102,7 @@
               <button type="button" class="btn btn-info float-right btn-sm" id="edit_subtask_add" onclick="editAddSubtask();">Add</button></p>
             </span>
             <div><span>Due: &nbsp;&nbsp;<input type="date" id="edit_due" class="save-on-enter save-on-ctrl-enter save-on-ctrl-s done-on-ctrl-d del-on-ctrl-del" onChange="enableSaveEdit();">
-            <button type="button" class="btn btn-link" id="edit_clear_due" onClick="clearDueDate();">&times;</button></span>
+            <button type="button" class="btn btn-link" id="edit_clear_due" onClick="clearDueDate();">Clear</button></span>
             <span class="float-right"><select id="edit_list" style="vertical-align: bottom;" class="save-on-enter save-on-ctrl-enter save-on-ctrl-s done-on-ctrl-d del-on-ctrl-del" onChange="enableSaveEdit();">
             <? for(var list of board.properties.lists) { ?>
             <option value="<?= list ?>"><?= list ?></option>
