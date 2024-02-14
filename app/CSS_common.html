@@ -66,6 +66,42 @@
     padding-right: 15px; // default was 20px
 }
 
+.subtask-added .hide-when-subtask-changed,
+.subtask-unlinked .hide-when-subtask-changed,
+.subtask-deleted .hide-when-subtask-changed {
+  display: none;
+}
+
+.hide-when-subtask-unchanged {
+  display: none;
+}
+
+.subtask-added .hide-when-subtask-unchanged,
+.subtask-unlinked .hide-when-subtask-unchanged,
+.subtask-deleted .hide-when-subtask-unchanged {
+  display: inherit;
+}
+
+.subtask-unlinked .hide-when-subtask-unlinked {
+  visibility: hidden;
+}
+
+.subtask-deleted .hide-when-subtask-deleted {
+  visibility: hidden;
+}
+
+.subtask-deleted {
+  background-color: var(--danger);
+}
+
+.subtask-unlinked {
+  background-color: var(--warning);
+}
+
+.subtask-added {
+  background-color: rgba(152, 251, 152, 0.2); // based on palegreen
+}
+
 <? if(board && board.properties.lists.length) { ?>
 .col-fit {
     -ms-flex: 0 0 <?= 100/board.properties.lists.length ?>%;

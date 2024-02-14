@@ -5,6 +5,17 @@
 ?>
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.10.2/Sortable.min.js" integrity="sha256-8Ww0c1qKDMdHT2+3s3369kzSXcgIrvqzSwzjdZ5qHDs=" crossorigin="anonymous"></script>
 <script>
+<? if (initial_edit) { ?>
+  var nextEdit = "<?= initial_edit ?>";
+  var nextAdd = null;
+<? } else if (initial_add) { ?>
+  var nextEdit = null;
+  var nextAdd = "<?= initial_add ?>";
+<? } else { ?>
+  var nextEdit = null;
+  var nextAdd = null;
+<? } ?>
+
 // drag & drop
 
 const drag = (event) => {
@@ -124,14 +135,14 @@ function configureBoardEvents() {
 // details visibility
 
 function toggleDetails(button) {
-  showDetails(button, button.innerHTML == "Show details");
+  showDetails(button, button.classList.contains("btn-secondary"));
 }
 
 function refreshDetails(button) {
-  showDetails(button, button.innerHTML != "Show details");
+  showDetails(button, !button.classList.contains("btn-secondary"));
 }
 
-function showDetails(button,value) {
+function showDetails(button, value) {
   var lists = document.getElementsByClassName("items");
   for(const list of lists) {
     const elements = list.getElementsByClassName("details");
@@ -144,7 +155,13 @@ function showDetails(button,value) {
       }
     }
   }
-  button.innerHTML = value ? "Hide details" : "Show details";
+  if (value) {
+    button.classList.remove("btn-secondary");
+    button.classList.add("btn-primary");
+  } else {
+    button.classList.remove("btn-primary");
+    button.classList.add("btn-secondary");
+  }
 }
 
 var longestListLength = 0;
@@ -195,14 +212,28 @@ function updateTaskCount() {
 
 // filtering
 
+function toggleSubtasks(button) {
+  if (button.classList.contains("btn-secondary")) {
+    button.classList.remove("btn-secondary");
+    button.classList.add("btn-primary");
+  } else {
+    button.classList.remove("btn-primary");
+    button.classList.add("btn-secondary");
+  }
+  updateFilter();
+}
+
 function updateFilter() {
   var elements = document.getElementsByClassName("filterable");
   if(!elements || !elements.length) return;
   var textbox = document.getElementById("filter_text");
   if(!textbox) return;
   var filter = textbox.value.toLowerCase();
+  var include_subtasks = document.getElementById("button_subtasks").classList.contains("btn-primary");
   for(var e=0; e<elements.length; e++) {
-    elements[e].style.display = elements[e].innerHTML.toLowerCase().indexOf(filter)==-1 ? "none":"inherit";
+    var not_subtask = !elements[e].classList.contains("subtask");
+    var matches_filter = elements[e].innerHTML.toLowerCase().indexOf(filter)!=-1;
+    elements[e].style.display = (not_subtask || include_subtasks) && matches_filter ? "inherit":"none";
   }
   updateDropzones();
   updateTaskCount();
@@ -222,13 +253,19 @@ function formatHtmlTask(task,optimistic) {
     if(!task.id) html += ' newtask';
     if(task.deleted) html += ' deleted';
   }
+  if (task.parent) {
+    html += " subtask";
+  }
   html += '" id="'+task.id+'" draggable="true" ondragstart="drag(event)">'; // ideally put data-toggle/target/id back in root task div, once I find a way to stop link clicking from opening the edit dialog
   html += '<div class="card-body p-2">';
   html += '<div class="card-title"';
   if(!task.deleted && task.id) html += ' data-toggle="modal" data-target="#editDialog" data-id="'+task.id+'"';
   html += '>';
   html += '<p class="float-right task-due'+getClassNameForDate(task.due)+'">'+formatHtmlDate(task.due)+'</p>';
-  html += '<p class="lead font-weight-light task-title">'+task.title+'</p>';
+  if (task.parent) {
+    html += '<span class="lead font-weight-light">↳ </span>';
+  }
+  html += '<span class="lead font-weight-light task-title">'+task.title+'</span>';
   html += '</div>';
   html += '<div class="details">';
   html += '<p data-toggle="modal"';
@@ -547,12 +584,6 @@ function loadTasksAsync() {
   google.script.run.withSuccessHandler(loadTasksSuccess).withFailureHandler(showError).getAllTasks("<?= board.id ?>");
 }
 
-function loadTaskAsync(taskId) {
-  var element = document.getElementById(taskId);
-  addClass(element, "loading");
-  google.script.run.withSuccessHandler(loadTaskSuccess).withFailureHandler(showError).getTask("<?= board.id ?>",taskId);
-}
-
 function loadListAsync(listName) {
   var list = document.getElementById(listName);
   var elements = list.getElementsByClassName("task");
@@ -576,6 +607,13 @@ function loadTasksSuccess(tasks,optimistic) {
 }
 
 function updateTaskElement(task, optimistic, delayUpdates) {
+  if (!optimistic && task.id) {
+    if (task.deleted || task.parent) { // exclude subtasks because GTasks UI limits to 1 layer of nesting
+      removeParentTaskOption(task.id);
+    } else {
+      addParentTaskOption(task.id, task.title, true);
+    }
+  }
   var existing = document.getElementById(task.id);
   if (task.deleted && !optimistic) {
     // shortcut to remove if confirmed delete
@@ -601,12 +639,18 @@ function updateTaskElement(task, optimistic, delayUpdates) {
         if (childPosition >= task.position)
           break;
       }
-      if (lastChild && lastChild.getElementsByClassName('task-position')[0].innerHTML >= task.position) {
-        eList.insertBefore(eTask, lastChild);
-        if (lastChild.getElementsByClassName('task-position')[0].innerHTML == task.position && !delayUpdates) // equal positions means it is out of date
-          loadListAsync(task.list); // update the whole list to avoid overloading tasks API with cascading update requests
-      } else
+      if (lastChild) {
+        if (lastChild.getElementsByClassName('task-position')[0].innerHTML > task.position) {
+          eList.insertBefore(eTask, lastChild);
+        } else {
+          eList.insertBefore(eTask, lastChild.nextSibling); // insert after lastChild
+          if (lastChild.getElementsByClassName('task-position')[0].innerHTML == task.position && !delayUpdates) // equal positions means it is out of date
+            loadListAsync(task.list); // update the whole list to avoid overloading tasks API with cascading update requests
+        }
+      } else {
+        // first task in this list
         eList.appendChild(eTask);
+      }
     }
   } else {
     alert('Error loading task: List '+task.list+' not found.');
@@ -644,21 +688,25 @@ function configureEditDialogEvents() {
     document.getElementById('edit_body').style.display = "none";
     document.getElementById('edit_complete').style.display = "none";
     document.getElementById('edit_delete').style.display = "none";
+    document.getElementById('edit_parent_panel').style.display = "none";
+    document.getElementById('edit_subtask_panel').style.display = "none";
     var edit_save = document.getElementById('edit_save');
     edit_save.style.display = "initial";
     edit_save.disabled = true;
     var id = $(event.relatedTarget).data('id');
     var list = $(event.relatedTarget).data('list');
     if (!id && !list) {
-      // initial action
-      <? if (initial_edit) { ?>
-        id = "<?= initial_edit ?>";
-      <? } else if (initial_add) { ?>
-        list = "<?= initial_add ?>";
-      <? } else { ?>
+      // use global nextEdit/nextAdd action
+      if (nextEdit) {
+        id = nextEdit;
+        nextEdit = null;
+      } else if (nextAdd) {
+        list = nextAdd;
+        nextAdd = null;
+      } else {
         openEditDialogFailure("Missing edit id and add list");
         return;
-      <? } ?>
+      }
     }
     if (id) {
       // edit
@@ -687,6 +735,12 @@ function configureEditDialogEvents() {
     if (!edit_save.disabled && !confirm('Are you sure you want to close without saving?'))
       e.preventDefault();
     pushActionUrl();
+  });
+  $('.add-subtask-on-enter').keypress(function (event) {
+    if (event.keyCode == 13) {
+      event.preventDefault();
+      $('#edit_subtask_add').click();
+    }
   });
   $('.save-on-enter').keypress(function (event) {
     if (event.keyCode == 13) {
@@ -724,9 +778,9 @@ function configureEditDialogEvents() {
       }
     }
   });
-  <? if (initial_add || initial_edit) { ?>
+  if (nextEdit || nextAdd) {
     editDialog.modal('show'); // initial action
-  <? } ?>
+  }
 }
 
 function pushActionUrl(action, value) {
@@ -759,7 +813,35 @@ function openEditDialogSuccess(task) {
     // provided list wasn't a valid option
     edit_list.value = "<?= board.properties.list_entry ?>";
   }
-  document.getElementById('edit_links').innerHTML = formatHtmlLinks(task.links);
+  var edit_links = document.getElementById('edit_links');
+  edit_links.innerHTML = formatHtmlLinks(task.links);
+  if (task.links && task.links.length) {
+    edit_links.style.display = 'inherit';
+  } else {
+    edit_links.style.display = 'none';
+  }
+  var edit_subtasks = document.getElementById('edit_subtasks');
+  edit_subtasks.innerHTML = "";
+  document.getElementById('edit_subtask_name').value = '';
+  document.getElementById('edit_parent').selectedIndex = 0;
+  if (task.subtasks && task.subtasks.length) {
+    // only show subtasks, not parent
+    for (const subtask of task.subtasks) {
+      edit_subtasks.appendChild($(formatEditSubtask(subtask.id, subtask.title))[0]);
+    }
+    document.getElementById('edit_subtask_panel').style.display = "initial";
+  } else if (task.parent) {
+    // only show parent, not subtasks
+    addParentTaskOption(task.parent, task.parent, false);
+    document.getElementById("edit_parent_button").disabled = false;
+    document.getElementById('edit_parent').value = task.parent;
+    document.getElementById('edit_parent_panel').style.display = "initial";
+  } else {
+    // allow both for now, until one is changed
+    document.getElementById("edit_parent_button").disabled = true;
+    document.getElementById('edit_subtask_panel').style.display = "initial";
+    document.getElementById('edit_parent_panel').style.display = "initial";
+  }
   document.getElementById('edit_notes').value = task.notes;
   document.getElementById('edit_due').value = task.due;
   var edit_title = document.getElementById('edit_title');
@@ -767,23 +849,168 @@ function openEditDialogSuccess(task) {
   edit_title.focus();
 }
 
+function addParentTaskOption(value, text, overwrite_existing) {
+  // add/update option
+  var id = 'parent_option_' + value;
+  var edit_parent = document.getElementById('edit_parent');
+  var existing = edit_parent.options.namedItem(id);
+  if (existing) {
+    if (!overwrite_existing) return;
+    if (existing.text == text) return;
+    existing.text = text;
+  } else {
+    var opt = document.createElement("option");
+    opt.text = text;
+    opt.value = value;
+    opt.id = id;
+    edit_parent.add(opt);
+  } 
+  // sort tasks by name
+  var all_options = $("#edit_parent option");
+  var selected = $("#edit_parent").val();
+  all_options.sort(function(a,b) {
+      if (a.text.toLowerCase() > b.text.toLowerCase()) return 1;
+      if (a.text.toLowerCase() < b.text.toLowerCase()) return -1;
+      return 0
+  });
+  $("#edit_parent").empty().append(all_options);
+  $("#edit_parent").val(selected);
+}
+
+function removeParentTaskOption(value) {
+  var id = 'parent_option_' + value;
+  var existing = edit_parent.options.namedItem(id);
+  if (existing) existing.remove();
+}
+
+function formatEditSubtask(existing_id, title) {
+  var html = "";
+  html += '<li class="list-group-item';
+  if (!existing_id) {
+    html += " subtask-added";
+  }
+  html += '">';
+  if (existing_id) {
+    html += '<button class="not-a-button btn-link hide-when-subtask-changed" onclick="editLaunchSubTask(\'' + existing_id + '\', \'' + title + '\');">' + title + '</button>';
+  }
+  html += '<span class="float-left hide-when-subtask-unchanged">' + title + '</span>';
+  html += '<span class="float-right">';  
+  if (existing_id) {
+    html += '<input type=hidden value="'+existing_id+'">';
+    html += '<button type="button" class="btn btn-sm btn-warning hide-when-subtask-deleted" onclick="editExistingSubtaskToggle(\''+existing_id+'\', \'subtask-unlinked\');">🔗</button>';
+    html += '<button type="button" class="btn btn-sm btn-danger hide-when-subtask-unlinked" aria-label="Close" onclick="editExistingSubtaskToggle(\''+existing_id+'\', \'subtask-deleted\');">🗑️</button>';
+  } else {
+    html += '<input type=hidden value="'+title+'">';
+    html += '<button type="button" class="btn btn-sm btn-danger" aria-label="Close" onclick="editRemoveNewSubtask(\''+title+'\');">🗑️</button>';
+  }
+  html += '</span>';
+  html += '</li>';
+  return html;
+}
+
+function editAddSubtask() {
+  var textbox = document.getElementById("edit_subtask_name");
+  if (!textbox.value) {
+    textbox.focus();
+    return alert('Subtask name cannot be blank.');
+  }
+  document.getElementById("edit_subtasks").appendChild($(formatEditSubtask(null, textbox.value))[0]);
+  textbox.value = "";
+  textbox.focus();
+  document.getElementById("edit_parent_panel").style.display = 'none'; // parent can no longer be set
+  enableSaveEdit();
+}
+
+function editParentChanged() {
+  document.getElementById("edit_subtask_panel").style.display = 'none'; // subtasks can no longer be set
+  document.getElementById("edit_parent_button").disabled = true; // once changed, editing the parent directly doesn't make sense because we might load an old version where the current task isn't a subtask yet
+  enableSaveEdit();
+}
+
+function editExistingSubtaskToggle(id, class_name) {
+  var edit_subtasks = document.getElementById("edit_subtasks");
+  var items = edit_subtasks.getElementsByTagName("li");
+  for (var item of items) {
+    if (item.getElementsByTagName("input")[0].value == id) {
+      item.classList.toggle(class_name);
+      document.getElementById("edit_subtask_name").focus();
+      enableSaveEdit();
+      return;
+    }
+  }
+}
+
+function editRemoveNewSubtask(title) {
+  var edit_subtasks = document.getElementById("edit_subtasks");
+  var items = edit_subtasks.getElementsByTagName("li");
+  for (var item of items) {
+    if (item.getElementsByTagName("input")[0].value == title) {
+      item.remove();
+      document.getElementById("edit_subtask_name").focus();
+      enableSaveEdit();
+      return;
+    }
+  }
+}
+
 function openEditDialogFailure(error) {
   $('#editDialog').modal('hide');
   showError(error);
 }
 
-function saveEditDialogAsync(action) {
+function editLaunchParentTask() {
+  var edit_parent = document.getElementById('edit_parent');
+  var opt = edit_parent.options.item(edit_parent.options.selectedIndex);
+  if (opt.value) {
+    editLaunchSubTask(opt.value, opt.text);
+  }
+}
+
+function editLaunchSubTask(id, title) {
+  var edit_save = document.getElementById('edit_save');
+  if (!edit_save.disabled && !confirm('Would you like to save your changes to this task and edit \'' + title + '\'?')) return;
+  saveEditDialogAsync(null, id);
+}
+
+function saveEditDialogAsync(action, immediately_edit_another_task_id) {
+  // check subtasks for changes
+  var added_subtasks = []; // titles
+  var unlinked_subtasks = []; // ids
+  var deleted_subtasks = []; // ids
+  var edit_subtasks = document.getElementById("edit_subtasks");
+  var items = edit_subtasks.getElementsByTagName("li");
+  for (var item of items) {
+    if (item.classList.contains("subtask-added")) {
+      added_subtasks.push(item.getElementsByTagName("input")[0].value);
+    } else if (item.classList.contains("subtask-unlinked")) {
+      unlinked_subtasks.push(item.getElementsByTagName("input")[0].value);
+    } else if (item.classList.contains("subtask-deleted") || action=='delete') { // deleting the parent task will delete all subtasks (unless they are unlinked first)
+      deleted_subtasks.push(item.getElementsByTagName("input")[0].value);
+    }
+  }
+  // compile changes
   var changes = {
     id: document.getElementById('edit_id').value,
     list: document.getElementById('edit_list').value,
     title: document.getElementById('edit_title').value,
     notes: document.getElementById('edit_notes').value,
-    due: document.getElementById('edit_due').value
+    due: document.getElementById('edit_due').value,
+    parent: document.getElementById('edit_parent').value
   };
+  if (added_subtasks.length) changes.added_subtasks = added_subtasks;
+  if (unlinked_subtasks.length) changes.unlinked_subtasks = unlinked_subtasks;
+  if (deleted_subtasks.length) changes.deleted_subtasks = deleted_subtasks;
   if(action=='delete') {
-    if(!window.confirm("Are you sure you want to delete '"+changes.title+"'?")) return;
+    if (deleted_subtasks.length) {
+      if(!window.confirm("Are you sure you want to delete '"+changes.title+"' and "+deleted_subtasks.length+" sub-task(s)?")) return;
+    } else {
+      if(!window.confirm("Are you sure you want to delete '"+changes.title+"'?")) return;
+    }
     changes.deleted = true;
   } else {
+    if (deleted_subtasks.length) {
+      if(!window.confirm("Are you sure you want to delete "+deleted_subtasks.length+" sub-task(s)?")) return;
+    } 
     if(action=='complete') changes.list = "<?= board.properties.list_exit ?>";
     // only check title is valid if we aren't deleting it
     if(!changes.title) {
@@ -794,6 +1021,10 @@ function saveEditDialogAsync(action) {
       alert('Task title cannot include \'<?= LIST_PREFIX ?>\' or \'<?= LIST_SUFFIX ?>\'.');
       return;
     }
+    if (changes.id && changes.parent == changes.id) {
+      alert("This task's parent cannot be set to itself.");
+      return;
+    }
   }
   updateTaskElement(changes,true); // add/save (optimistically) in dom immediately, to be updated again on callback
   if (changes.id) {
@@ -802,6 +1033,13 @@ function saveEditDialogAsync(action) {
     google.script.run.withSuccessHandler(updateTaskSuccess).withFailureHandler(addTaskFailure).addTask("<?= board.id ?>",changes);
   }
   document.getElementById('edit_save').disabled = true; // so that user isn't asked if they want to save changes
+  if (immediately_edit_another_task_id) {
+    $('#editDialog').one('hidden.bs.modal', function (e) {
+      // this only runs once
+      nextEdit = immediately_edit_another_task_id;
+      $('#editDialog').modal('show');
+    })
+  }
   $('#editDialog').modal('hide');
 }
 

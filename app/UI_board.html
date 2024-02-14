@@ -31,7 +31,8 @@
         </ul>
         <div class="form-inline my-2 my-lg-0">
           <input class="form-control mr-sm-2" type=textbox id="filter_text" placeholder="Filter text" onKeyUp='updateFilter();' value="<?= initial_filter ?>">
-          <button class="btn btn-primary btn-sm my-2 my-sm-0" id="button_details" onClick="toggleDetails(this);">Hide details</button>&nbsp;
+          <button class="btn btn-primary btn-sm my-2 my-sm-0" id="button_details" onClick="toggleDetails(this);">📝</button>&nbsp;
+          <button class="btn btn-primary btn-sm my-2 my-sm-0" id="button_subtasks" onClick="toggleSubtasks(this);">↳</button>&nbsp;
           <button class="btn btn-primary btn-sm my-2 my-sm-0" onClick="loadTasksAsync();">🔄</button>&nbsp;
           <button class="btn btn-primary btn-sm my-2 my-sm-0" data-toggle="modal" data-target="#importExportDialog">📁</button>&nbsp;
           <button class="btn btn-primary btn-sm my-2 my-sm-0" data-toggle="modal" data-target="#settingsDialog">⚙️</button>
@@ -88,10 +89,21 @@
             <input type="hidden" id="edit_id">
             <p>Title:<br><input type="text" id="edit_title" class="form-control save-on-enter save-on-ctrl-enter save-on-ctrl-s done-on-ctrl-d del-on-ctrl-del" onInput="enableSaveEdit();"></p>
             <p>Notes:<br><textarea id="edit_notes" rows="8" cols="60" style="resize: none;" class="form-control save-on-ctrl-enter save-on-ctrl-s done-on-ctrl-d del-on-ctrl-del" onInput="enableSaveEdit();"></textarea></p>
-            <p id="edit_links"></p>
+            <p id="edit_links" style="display: none;"></p>
+            <span id="edit_parent_panel">
+              <p><button type="button" class="btn btn-link btn-sm" id="edit_parent_button" onclick="editLaunchParentTask();">⮤ Parent</button>
+              <select style="width:83%" id="edit_parent" class="float-right save-on-enter save-on-ctrl-enter save-on-ctrl-s done-on-ctrl-d del-on-ctrl-del" onChange="editParentChanged();">
+                <option value="" id=""></option>
+              </select></p>
+            </span>
+            <span id="edit_subtask_panel">
+              <ul id="edit_subtasks" class="list-group"></ul>
+              <p><input type=textbox id="edit_subtask_name" style="width:90%; vertical-align: bottom;" placeholder="New subtask" class="add-subtask-on-enter save-on-ctrl-enter save-on-ctrl-s done-on-ctrl-d del-on-ctrl-del">
+              <button type="button" class="btn btn-info float-right btn-sm" id="edit_subtask_add" onclick="editAddSubtask();">Add</button></p>
+            </span>
             <div><span>Due: &nbsp;&nbsp;<input type="date" id="edit_due" class="save-on-enter save-on-ctrl-enter save-on-ctrl-s done-on-ctrl-d del-on-ctrl-del" onChange="enableSaveEdit();">
-            <button type="button" class="btn btn-link" id="edit_clear_due" onClick="clearDueDate();">X</button></span>
-            <span class="float-right"><select id="edit_list" class="save-on-enter save-on-ctrl-enter save-on-ctrl-s done-on-ctrl-d del-on-ctrl-del" onChange="enableSaveEdit();">
+            <button type="button" class="btn btn-link" id="edit_clear_due" onClick="clearDueDate();">Clear</button></span>
+            <span class="float-right"><select id="edit_list" style="vertical-align: bottom;" class="save-on-enter save-on-ctrl-enter save-on-ctrl-s done-on-ctrl-d del-on-ctrl-del" onChange="enableSaveEdit();">
             <? for(var list of board.properties.lists) { ?>
             <option value="<?= list ?>"><?= list ?></option>
             <? } ?>
