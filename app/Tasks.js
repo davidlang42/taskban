@@ -3,34 +3,44 @@ const LIST_SUFFIX = ")";
 
 // client call
 function getAllTasks(boardId) {
-  return getAllTasksInternal(boardId, true); // updates prerequisites if enabled
-}
-
-function getAllTasksInternal(boardId, updatePrerequisitesIfEnabled) {
   var board = {id: boardId};
   loadBoardProperties(board);
-  if (updatePrerequisitesIfEnabled && board.properties.enable_prerequisites) {
+  if (board.properties.enable_prerequisites) { // update prerequisites if enabled
     runPrerequisiteUpdatesForBoard(boardId, false); // does nothing if already locked
   }
-  var result = {};
+  var tasksById = getUnprocessedTasksById(boardId);
   var tasks = [];
+  for (const id in tasksById) {
+    var task = tasksById[id];
+    processTask(task, board, tasksById[task.parent]);
+    tasks.push(task);
+  }
+  return tasks;
+}
+
+function getUnprocessedTasksById(boardId) {
+  var result = {};
+  var tasksById = {};
   do {
     result = Tasks.Tasks.list(boardId, {showHidden: true, maxResults: 100, pageToken: result.nextPageToken});
     if(!result || !result.items || !result.items.length) break;
     for(const t of result.items) {
-      processTask(t, board);
-      tasks.push(t);
+      tasksById[t.id] = t;
     }
   } while (result.nextPageToken);
-  return tasks;
+  return tasksById;
 }
 
 // client call
 function getManyTasks(boardId, taskIds) {
+  var board = {id: boardId};
+  loadBoardProperties(board);
+  var tasksById = getUnprocessedTasksById(boardId);
   var tasks = [];
-  for(const task of getAllTasksInternal(boardId, false)) { // does not update prerequisites
-    if (taskIds.includes(task.id))
-      tasks.push(task);
+  for(const id of taskIds) {
+    const task = tasksById[id];
+    processTask(task, board, tasksById[task.parent]);
+    tasks.push(task);
   }
   return tasks;
 }
@@ -55,7 +65,7 @@ function getTasksByDate(date_string) {
       const result = Tasks.Tasks.list(board.id, request);
       if(!result || !result.items || !result.items.length) break;
       for(const t of result.items) {
-        processTask(t, board);
+        processTask(t, board); // doesn't provide parent, so position will be wrong, but this shouldn't matter here
         t.board = board; // slight hack to allow UI_list to know about the boards
         tasks.push(t);
       }
@@ -77,18 +87,23 @@ function getTasksByDate(date_string) {
 function getTask(boardId, taskId) {
   var board = {id: boardId};
   loadBoardProperties(board);
-  var main;
-  var subtasks = [];
-  //TODO dont process tasks until they are here
-  for(const task of getAllTasksInternal(boardId, false)) { // does not update prerequisites
-    if (task.id == taskId) {
-      main = task;
-    } else if (task.parent == taskId) {
-      subtasks.push(task);
+  var tasksById = getUnprocessedTasksById(boardId);
+  var main = tasksById[taskId];
+  if (!main) throw new Error("Task not found: " + taskId);
+  processTask(main, board, tasksById[main.parent]);
+  main.subtasks = [];
+  for(const id in tasksById) {
+    const task = tasksById[id];
+    if (task.parent == taskId) {
+      processTask(task, board, main);
+      main.subtasks.push(task);
     }
   }
-  //TODO sort subtasks
-  main.subtasks = subtasks;
+  main.subtasks.sort(function(a,b) {
+      if (a.position > b.position) return 1;
+      if (a.position < b.position) return -1;
+      return 0
+  });
   return main;
 }
 
@@ -117,13 +132,14 @@ function addListToName(task,listName) {
   task.title = task.title+" "+LIST_PREFIX+listName+LIST_SUFFIX;
 }
 
-function processTask(task, board) {
+function processTask(task, board, parent) {
   const listName = extractListFromName(task);
   task.list = includesIgnoreCase(board.properties.lists, listName);
   //WRONG LIST DIALOG: if (!task.list) task.list = listName; // to be handled by Wrong List dialog
   if (task.completed) task.list = board.properties.list_exit;
   if (!task.list) task.list = board.properties.list_entry;
   if (!task.notes) task.notes = "";
+  if (parent) task.position = parent.position + "_" + task.position;
   task.due = formatDateForm(task.due);
 }
 
@@ -146,7 +162,8 @@ function moveTask(boardId, taskId, listName, afterTaskId) {
   return updateTask(boardId, {
     id:taskId,
     title:task.title,
-    list:listName
+    list:listName,
+    parent:task.parent
   }, afterTaskId);
 }
 
@@ -167,41 +184,85 @@ function updateTask(boardId,changes,afterTaskId) {
       changes.completed = null;
     }
   }
-  //TODO handle parent changing/already set but not included here
-  var task;
-  if (changes.id) {
-    task = Tasks.Tasks.patch(changes, boardId, changes.id);
-    if (afterTaskId)
-      task = Tasks.Tasks.move(boardId, changes.id, {previous: afterTaskId}); //TODO {parent:}
-  } else {
-    task = Tasks.Tasks.insert(changes, boardId, {previous: afterTaskId}); //TODO {parent:}
-  }
-  if (changes.added_subtasks) {
-    //TODO actually add
-  }
-  if (changes.unlinked_subtasks) {
-    //TODO actually unlink
-  }
-  if (changes.deleted_subtasks) {
-    //TODO actually delete
-  }
-  if (board.properties.enable_prerequisites) {
-    if (changes.status == "completed") { // might affect any task on this board
-      var updated_tasks = runPrerequisiteUpdatesForBoard(boardId, false); // does nothing if already locked
-      if (updated_tasks && updated_tasks.length) {
-        updated_tasks.push(task);
-        for (const t of updated_tasks) {
-          processTask(t, board);
-        }
-        return updated_tasks;
-      }
-    } else if (!changes.deleted && 'notes' in changes) { // could only affect this task
-      var updated_task = runPrerequisiteUpdatesForTask(boardId, task);
-      if (updated_task) task = updated_task;
+  var updated_tasks_by_id = {};
+  if (changes.added_subtasks && !changes.deleted) {
+    var last_id = null;
+    for (const add_title of changes.added_subtasks) {
+      var new_task = Tasks.Tasks.insert({ title: add_title }, boardId, {previous: last_id, parent: changes.id});
+      updated_tasks_by_id[new_task.id] = new_task;
+      last_id = new_task.id;
     }
   }
-  processTask(task, board);
-  return task;
+  if (changes.unlinked_subtasks) { // must happen before main task, because that might delete everything
+    var last_id = changes.id;
+    for (const unlink_id of changes.unlinked_subtasks) {
+      var unlinked_task = Tasks.Tasks.move(boardId, unlink_id, {previous: last_id, parent: null});
+      updated_tasks_by_id[unlinked_task.id] = unlinked_task;
+      last_id = unlinked_task.id;
+    }
+  }
+  if (changes.deleted_subtasks) {
+    for (const delete_id of changes.deleted_subtasks) {
+      var deleted_task = Tasks.Tasks.patch({ deleted: true }, boardId, delete_id);
+      updated_tasks_by_id[deleted_task.id] = deleted_task;
+    }
+  }
+  var main_task;
+  if (changes.id) {
+    main_task = Tasks.Tasks.patch(changes, boardId, changes.id);
+    var parent_has_changed = main_task.parent && changes.parent && main_task.parent != changes.parent || !!main_task.parent != !!changes.parent;
+    if (!changes.deleted && (afterTaskId || parent_has_changed)) {
+      try {
+        main_task = Tasks.Tasks.move(boardId, changes.id, {previous: afterTaskId, parent: changes.parent});
+      } catch (e) {
+        if (e.message.includes("Invalid task id")) {
+          // we tried to move a task after a task which is not its sibling
+          // google has saved the other changes, so its safe to re-get the task and continue
+          main_task = Tasks.Tasks.get(boardId, changes.id); // need to refresh because parent might have changed
+        } else {
+          throw e;
+        }
+      }
+    }
+  } else {
+    main_task = Tasks.Tasks.insert(changes, boardId, {previous: afterTaskId, parent: changes.parent});
+  }
+  updated_tasks_by_id[main_task.id] = main_task;
+  if (board.properties.enable_prerequisites) {
+    if (changes.status == "completed") { // might affect any task on this board
+      var newly_updated_tasks = runPrerequisiteUpdatesForBoard(boardId, false); // does nothing if already locked
+      if (newly_updated_tasks && newly_updated_tasks.length) {
+        for (const t of newly_updated_tasks) {
+          updated_tasks_by_id[t.id] = t; // might update things we've already changed
+        }
+      }
+    } else if (!changes.deleted && 'notes' in changes) { // could only affect this task
+      var newly_updated_task = runPrerequisiteUpdatesForTask(boardId, main_task);
+      if (newly_updated_task) {
+        updated_tasks_by_id[newly_updated_task.id] = newly_updated_task; // might update things we've already changed
+      }
+    }
+  }
+  var updated_tasks = [];
+  var cache_by_id = { ...updated_tasks_by_id }; // shallow copy
+  for (const id in updated_tasks_by_id) {
+    var task = updated_tasks_by_id[id];
+    var parent = null;
+    if (task.parent) {
+      parent = cache_by_id[task.parent];
+      if (!parent) {
+        parent = Tasks.Tasks.get(boardId, task.parent);
+        cache_by_id[task.parent] = parent;
+      }
+    }
+    processTask(task, board, parent);
+    updated_tasks.push(task);
+  }
+  if (updated_tasks.length == 1) {
+    return updated_tasks[0];
+  } else {
+    return updated_tasks;
+  }
 }
 
 // client call
@@ -258,6 +319,10 @@ function removeCompletedTasksDueDatesOnAllBoards() {
 function sortTasks(boardId, taskIds, sortMethod) {
   // only those which are listed (those that were visible)
   var tasks = getManyTasks(boardId, taskIds);
+  if (tasks.some((t) => t.parent)) {
+    // if this feature is wanted in the future, the tasks will first need to be grouped by parent, then each group sorted separately
+    throw new Error("Sorting subtasks is not supported, click '↳' to hide them then try again.");
+  }
   var currentOrderIds = tasks.sort((a,b) => compare(a.position, b.position)).map((t) => t.id); // mutates 'tasks' order
   var newOrderIds = runSortMethod(tasks, sortMethod).map((t) => t.id); // mutates 'tasks' order
   var previousId = null;

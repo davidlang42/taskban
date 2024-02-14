@@ -135,14 +135,14 @@ function configureBoardEvents() {
 // details visibility
 
 function toggleDetails(button) {
-  showDetails(button, button.innerHTML == "Show details");
+  showDetails(button, button.classList.contains("btn-secondary"));
 }
 
 function refreshDetails(button) {
-  showDetails(button, button.innerHTML != "Show details");
+  showDetails(button, !button.classList.contains("btn-secondary"));
 }
 
-function showDetails(button,value) {
+function showDetails(button, value) {
   var lists = document.getElementsByClassName("items");
   for(const list of lists) {
     const elements = list.getElementsByClassName("details");
@@ -155,7 +155,13 @@ function showDetails(button,value) {
       }
     }
   }
-  button.innerHTML = value ? "Hide details" : "Show details";
+  if (value) {
+    button.classList.remove("btn-secondary");
+    button.classList.add("btn-primary");
+  } else {
+    button.classList.remove("btn-primary");
+    button.classList.add("btn-secondary");
+  }
 }
 
 var longestListLength = 0;
@@ -206,14 +212,28 @@ function updateTaskCount() {
 
 // filtering
 
+function toggleSubtasks(button) {
+  if (button.classList.contains("btn-secondary")) {
+    button.classList.remove("btn-secondary");
+    button.classList.add("btn-primary");
+  } else {
+    button.classList.remove("btn-primary");
+    button.classList.add("btn-secondary");
+  }
+  updateFilter();
+}
+
 function updateFilter() {
   var elements = document.getElementsByClassName("filterable");
   if(!elements || !elements.length) return;
   var textbox = document.getElementById("filter_text");
   if(!textbox) return;
   var filter = textbox.value.toLowerCase();
+  var include_subtasks = document.getElementById("button_subtasks").classList.contains("btn-primary");
   for(var e=0; e<elements.length; e++) {
-    elements[e].style.display = elements[e].innerHTML.toLowerCase().indexOf(filter)==-1 ? "none":"inherit";
+    var not_subtask = !elements[e].classList.contains("subtask");
+    var matches_filter = elements[e].innerHTML.toLowerCase().indexOf(filter)!=-1;
+    elements[e].style.display = (not_subtask || include_subtasks) && matches_filter ? "inherit":"none";
   }
   updateDropzones();
   updateTaskCount();
@@ -232,6 +252,9 @@ function formatHtmlTask(task,optimistic) {
     html += ' saving';
     if(!task.id) html += ' newtask';
     if(task.deleted) html += ' deleted';
+  }
+  if (task.parent) {
+    html += " subtask";
   }
   html += '" id="'+task.id+'" draggable="true" ondragstart="drag(event)">'; // ideally put data-toggle/target/id back in root task div, once I find a way to stop link clicking from opening the edit dialog
   html += '<div class="card-body p-2">';
@@ -616,12 +639,18 @@ function updateTaskElement(task, optimistic, delayUpdates) {
         if (childPosition >= task.position)
           break;
       }
-      if (lastChild && lastChild.getElementsByClassName('task-position')[0].innerHTML >= task.position) {
-        eList.insertBefore(eTask, lastChild);
-        if (lastChild.getElementsByClassName('task-position')[0].innerHTML == task.position && !delayUpdates) // equal positions means it is out of date
-          loadListAsync(task.list); // update the whole list to avoid overloading tasks API with cascading update requests
-      } else
+      if (lastChild) {
+        if (lastChild.getElementsByClassName('task-position')[0].innerHTML > task.position) {
+          eList.insertBefore(eTask, lastChild);
+        } else {
+          eList.insertBefore(eTask, lastChild.nextSibling); // insert after lastChild
+          if (lastChild.getElementsByClassName('task-position')[0].innerHTML == task.position && !delayUpdates) // equal positions means it is out of date
+            loadListAsync(task.list); // update the whole list to avoid overloading tasks API with cascading update requests
+        }
+      } else {
+        // first task in this list
         eList.appendChild(eTask);
+      }
     }
   } else {
     alert('Error loading task: List '+task.list+' not found.');
@@ -933,7 +962,7 @@ function editLaunchParentTask() {
   var edit_parent = document.getElementById('edit_parent');
   var opt = edit_parent.options.item(edit_parent.options.selectedIndex);
   if (opt.value) {
-    editLaunchSubTask(opt.id, opt.text);
+    editLaunchSubTask(opt.value, opt.text);
   }
 }
 
@@ -955,7 +984,7 @@ function saveEditDialogAsync(action, immediately_edit_another_task_id) {
       added_subtasks.push(item.getElementsByTagName("input")[0].value);
     } else if (item.classList.contains("subtask-unlinked")) {
       unlinked_subtasks.push(item.getElementsByTagName("input")[0].value);
-    } else if (item.classList.contains("subtask-deleted")) {
+    } else if (item.classList.contains("subtask-deleted") || action=='delete') { // deleting the parent task will delete all subtasks (unless they are unlinked first)
       deleted_subtasks.push(item.getElementsByTagName("input")[0].value);
     }
   }
@@ -966,7 +995,7 @@ function saveEditDialogAsync(action, immediately_edit_another_task_id) {
     title: document.getElementById('edit_title').value,
     notes: document.getElementById('edit_notes').value,
     due: document.getElementById('edit_due').value,
-    parent: document.getElementById('edit_parent').value,
+    parent: document.getElementById('edit_parent').value
   };
   if (added_subtasks.length) changes.added_subtasks = added_subtasks;
   if (unlinked_subtasks.length) changes.unlinked_subtasks = unlinked_subtasks;
