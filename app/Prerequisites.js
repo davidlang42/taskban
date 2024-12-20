@@ -46,6 +46,10 @@ function runAllPrerequisiteUpdates() {
         errors.push(err);
         errorBoards.push(board.title + " (" + err.toString() + ")");
       }
+    } else {
+      // to help fix locked boards without opening AppsScripts,
+      // disabling pre-requisites should force unlock the board
+      unlock(PREREQUISITES_LOCK_PREFIX + board.id);
     }
   }
   if (errors.length) {

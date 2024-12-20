@@ -2,27 +2,114 @@
 // inputs: initial_date
 ?>
 <script>
-var cache = {}; // formDate: tasks[]
+var cache = {}; // formDate: html for tasks[]
 var calendar = {}; // formDate: Date
 var minDate = new Date('<?= formatDateForm(initial_date) ?>');
-var daysToPreload = 7;
+var daysToDisplay = 7;
+var noTasksAfter = null;
 
 function loadTasksAsync() {
+  updateContentIfChanged();
   var d = document.getElementById("summary_date").value;
-  var content = document.getElementById("accordion");
-  var calendar_date = document.getElementById("calendar_date");
-  if (d) {
-    const cached_value = cache[d];
-    if (cached_value) {
-      content.innerHTML = cached_value;
-      calendar_date.value = calendar[d].toDateString();
-      preloadCache();
-    } else {
-      content.innerHTML = '<div class="loading">Loading...</div>';
-      google.script.run.withSuccessHandler(loadTasksSuccess).withUserObject(d).withFailureHandler(showError).getTasksByDate(d);
+  if (!d) return;
+  loadMoreDays(d);
+}
+
+function loadMoreDays(date_string) {
+  var dObj = new Date(date_string);
+  for (var i=0; i<daysToDisplay; i++) {
+    d = formatDateForm(dObj);
+    if (!cache[d] && dObj >= minDate) {
+      cache[d] = '<div class="loading">Loading...</div>';
+      calendar[d] = new Date(d);
+      updateContentIfChanged();
+      google.script.run.withSuccessHandler(loadTasksSuccess).withUserObject(d).getTasksByDate(d);
     }
-  } else {
+    dObj.setDate(dObj.getDate()+1);
+  }
+}
+
+function loadUntilTask(date_string) {
+  cache[date_string] = '<div class="loading">Loading...</div>';
+  calendar[date_string] = new Date(date_string);
+  updateContentIfChanged();
+  google.script.run.withSuccessHandler(loadUntilTaskContinued).withUserObject(date_string).getAnyDueDate(date_string);
+}
+
+function loadUntilTaskContinued(any_due_date, after_date_string) {
+  var after = new Date(after_date_string);
+  if (!any_due_date) {
+    noTasksAfter = after;
+    updateContentIfChanged();
+    return;
+  }
+  var any = new Date(any_due_date);
+  var iterations_to_reach_known_date = (any.getTime() - after.getTime()) / (1000 * 3600 * 24);
+  google.script.run.withSuccessHandler(loadUntilTaskLoop).withUserObject({
+    max_iterations: iterations_to_reach_known_date,
+    date_string: after_date_string
+  }).getTasksByDate(after_date_string);
+}
+
+function loadUntilTaskLoop(tasks, obj) {
+  var date_string = obj.date_string;
+  loadTasksSuccess(tasks, date_string);
+  if (tasks.length) {
+    // we found a task, stop here
+    return;
+  }
+  var max_iterations = obj.max_iterations;
+  if (max_iterations < 0) {
+    // should have found a task by now, possible someone deleted it while we were trying
+    return;
+  }
+  var dObj = new Date(date_string);
+  do {
+    dObj.setDate(dObj.getDate() + 1);
+    max_iterations -= 1;
+  } while (cache[d])
+  var d = formatDateForm(dObj);
+  cache[d] = '<div class="loading">Loading...</div>';
+  calendar[d] = dObj;
+  updateContentIfChanged();
+  google.script.run.withSuccessHandler(loadUntilTaskLoop).withUserObject({
+    max_iterations: max_iterations,
+    date_string: d
+  }).getTasksByDate(d);
+}
+
+function updateContentIfChanged() {
+  var content = document.getElementById("accordion");
+  var date_string = document.getElementById("summary_date").value;
+  if (!date_string) {
     content.innerHTML = 'Please select a date.';
+    return;
+  }
+  const earliest_date = calendar[date_string];
+  if (earliest_date) {
+    document.getElementById("calendar_date").value = earliest_date.toDateString();
+  }
+  var d = new Date(date_string);
+  var html = "";
+  while (true) {
+    const cached_value = cache[formatDateForm(d)];
+    if (cached_value) {
+      if (noTasksAfter && d >= noTasksAfter) {
+        html += '<h6><i>End of tasks</i></h6>';
+        break;
+      }
+      html += cached_value;
+      d.setDate(d.getDate()+1);
+    } else {
+      const next_date = "'" + formatDateForm(d) + "'";
+      html += '<button class="btn btn-link" onClick="loadMoreDays(' + next_date + ');">Load next ' + daysToDisplay + ' days</button>';
+      html += '<button class="btn btn-link" onClick="loadUntilTask(' + next_date + ');">Load until next task</button>';
+      break;
+    }
+  }
+  if (content.innerHTML != html) {
+    content.innerHTML = html;
+    updateFilter(); // also calls refreshEmpty()
   }
 }
 
@@ -43,38 +130,13 @@ function loadTasksSuccess(tasks,date_string) {
       if (this_date < earliest_date)
         earliest_date = this_date;
     }
+    html = "<div class='filterable-heading'>" + html + "</div>";
   } else {
-    html += "No tasks.";
-  }
-  if (date_string == document.getElementById("summary_date").value) {
-    document.getElementById("calendar_date").value = earliest_date.toDateString();
-    document.getElementById("accordion").innerHTML = html;
+    html = "<div class='empty'>" + html + "No tasks.</div>"
   }
   cache[date_string] = html;
   calendar[date_string] = earliest_date;
-  preloadCache();
-}
-
-function preloadCache() {
-  var d = document.getElementById("summary_date").value;
-  if (!d) return;
-  if (!cache[d]) {
-    cache[d] = '<div class="loading">Loading...</div>';
-    google.script.run.withSuccessHandler(loadTasksSuccess).withUserObject(d).getTasksByDate(d);
-  }
-  var dObj = new Date(d);
-  for (var i=1; i<=2*daysToPreload; i++) {
-    if (i % 2 == 0) {
-      dObj.setDate(dObj.getDate()-i); // -2,-4,-6,-8,-10,-12,-14
-    } else {
-      dObj.setDate(dObj.getDate()+i); // +1,+3,+5,+7,+9,+11,+13
-    }
-    d = formatDateForm(dObj); // relative to initial date: +1,-1,+2,-2,+3,-3 etc
-    if (!cache[d] && dObj >= minDate) {
-      cache[d] = '<div class="loading">Loading...</div>';
-      google.script.run.withSuccessHandler(loadTasksSuccess).withUserObject(d).getTasksByDate(d);
-    }
-  }
+  updateContentIfChanged();
 }
 
 function changeDay(delta) {
@@ -95,7 +157,7 @@ function digits(s,len) {
 }
 
 function formatHtmlTask(t) {
-  var html = '<div class="card">';
+  var html = '<div class="card filterable">';
   html += '<div class="card-header">';
   html += '<h5 class="mb-0">';
   html += '<button class="btn btn-link'+getClassNameForDate(t.due)+'" data-toggle="collapse" data-target="#'+uniqueId(t.board.id,t.id)+'" style="text-align: left">';
@@ -138,8 +200,9 @@ function updateCurrentCache() {
 }
 
 function clearCurrentCache() {
-  var d = document.getElementById("summary_date").value;
-  cache[d] = null;
+  cache = {};
+  calendar = {};
+  noTasksAfter = null;
 }
 
 function markComplete(boardId, taskId, listToComplete) {
@@ -151,7 +214,7 @@ function markComplete(boardId, taskId, listToComplete) {
 
 function changeList(boardId, taskId, listName) {
   clearCurrentCache(); // otherwise the current cache will show the incorrect list if reloaded
-  google.script.run.withFailureHandler(showError).withSuccessHandler(preloadCache).moveTask(boardId, taskId, listName); // on return preloadCache will reload the current day
+  google.script.run.withFailureHandler(showError).withSuccessHandler(loadTasksAsync).moveTask(boardId, taskId, listName); // on return loadTasksAsync will reload the current day
 }
 
 function uniqueId(boardId,taskId) {
@@ -162,5 +225,65 @@ function openCalendar() {
   var d = new Date(document.getElementById("calendar_date").value);
   var url = "https://calendar.google.com/calendar/u/0/r/customweek/"+d.getFullYear()+"/"+(d.getMonth()+1)+"/"+d.getDate();
   window.open(url,"_blank");
+}
+
+// empty day visibility
+
+function toggleEmpty(button) {
+  showEmpty(button, button.classList.contains("btn-secondary"));
+  updateFilter();
+}
+
+function refreshEmpty(button) {
+  showEmpty(button, !button.classList.contains("btn-secondary"));
+}
+
+function showEmpty(button, value) {
+  var empties = document.getElementsByClassName("empty");
+  var no_filters = !document.getElementById("filter_text").value;
+  for(const empty of empties) {
+    if ((Array.prototype.indexOf.call(empty.parentNode.children, empty) == 0) && no_filters) {
+      // dont hide if this is the selected day
+      empty.style.display = "inherit";
+    } else {
+      empty.style.display = (value && no_filters) ? "inherit" : "none";
+    }
+  }
+  if (value) {
+    button.classList.remove("btn-secondary");
+    button.classList.add("btn-primary");
+  } else {
+    button.classList.remove("btn-primary");
+    button.classList.add("btn-secondary");
+  }
+}
+
+// filtering
+
+function updateFilter() {
+  var elements = document.getElementsByClassName("filterable");
+  if(elements && elements.length) {
+    var filter = document.getElementById("filter_text").value.toLowerCase();
+    // hide filterables if they dont match
+    for(var e=0; e<elements.length; e++) {
+      var matches_filter = elements[e].innerHTML.toLowerCase().indexOf(filter)!=-1;
+      elements[e].style.display = matches_filter ? "inherit":"none";
+    }
+    // hide headings if all filterables are hidden
+    var headings = document.getElementsByClassName("filterable-heading");
+    for(var h=0; h<headings.length; h++) {
+      var all_sub_filterables_hidden = true;
+      var sub_filterables = headings[h].getElementsByClassName("filterable");
+      for(var s=0; s<sub_filterables.length; s++) {
+        if (sub_filterables[s].style.display != "none") {
+          all_sub_filterables_hidden = false;
+          break;
+        }
+      }
+      headings[h].style.display = !all_sub_filterables_hidden ? "inherit":"none";
+    }
+  }
+  // empties get hidden if there is any filter
+  refreshEmpty(document.getElementById("button_empty"));
 }
 </script>
