@@ -53,13 +53,14 @@ function getTasksByDate(date_string) {
   dMax.setDate(dMax.getDate()+1);
   var request = {
     showCompleted: false,
-    maxResults: 100,
+    maxResults: 100,//TODO why limit this?
     dueMax: formatDateTasks(dMax)
   };
   if (dMin > new Date()) request.dueMin = formatDateTasks(dMin);
   var boards = listBoards();
   var tasks = [];
   for(const board of boards) {
+    //TODO shouldn't we reset the pageToken? request.pageToken = null;
     loadBoardProperties(board);
     do {
       const result = Tasks.Tasks.list(board.id, request);
@@ -81,6 +82,25 @@ function getTasksByDate(date_string) {
     if (a.board.properties.lists.indexOf(a.list) > b.board.properties.lists.indexOf(b.list)) return 1;
     return 0; // don't sort by task title, it doesn't mean anything
   });
+}
+
+// client call
+function getAnyDueDate(after_date_string) {
+  const dAfter = new Date(Date.parse(after_date_string));
+  removeTime(dAfter);
+  var request = {
+    showCompleted: false,
+    maxResults: 1,
+    dueMin: formatDateTasks(dAfter)
+  };
+  var boards = listBoards();
+  for(const board of boards) {
+    loadBoardProperties(board);
+    const result = Tasks.Tasks.list(board.id, request);
+    if(!result || !result.items || !result.items.length) continue;
+    return formatDateForm(result.items[0].due);
+  }
+  return "";
 }
 
 // client call

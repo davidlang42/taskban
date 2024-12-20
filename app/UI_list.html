@@ -1,6 +1,6 @@
 <?
 // based on: https://getbootstrap.com/docs/4.0/components/collapse/
-// inputs: initial_date, boards
+// inputs: initial_date, boards, initial_filter
 ?>
 <!DOCTYPE html>
 <html>
@@ -15,11 +15,14 @@
     <div class="container-fluid pt-3" style="background-color: white;">
       <h3 class="font-weight-light text-black" data-toggle="modal" data-target="#boardList" id="toggle_board_list" style="display:inline;">TaskBan Summary</h3>
       <button class="btn btn-primary btn-sm float-right" onClick="clearCurrentCache();loadTasksAsync();">🔄</button>
+      <button class="btn btn-secondary btn-sm float-right" id="button_empty" onClick="toggleEmpty(this);">🗍</button>
       <button class="btn btn-link btn-sm float-right" onClick="openCalendar();">Open Calendar</button>
       <input type="hidden" id="calendar_date" value="<?= formatDateForm(initial_date) ?>">
       <p><input type="date" id="summary_date" value="<?= formatDateForm(initial_date) ?>" min="<?= formatDateForm(initial_date) ?>" onchange="loadTasksAsync()">
       <button type="button" class="float-right btn btn-dark" onclick="changeDay(1)">Next</button>
-      <button type="button" class="float-right btn btn-light" onclick="changeDay(-1)">Prev</button></p>
+      <button type="button" class="float-right btn btn-light" onclick="changeDay(-1)">Prev</button>
+      <input class="form-control float-right" style="width: 200px" type=textbox id="filter_text" placeholder="Filter text" onKeyUp='updateFilter();' value="<?= initial_filter ?>">
+      </p>
       <div id="accordion">
       </div>
     </div>

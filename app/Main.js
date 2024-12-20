@@ -24,7 +24,7 @@ function doGet(e) {
   if (e.parameter.redirect)
     return redirect(INTERNAL_URL);
   else
-    return uiList(new Date(), boards);
+    return uiList(new Date(), boards, e.parameter.filter);
 }
 
 function uiBoard(board, boards, initial_filter, initial_edit, initial_add) {
@@ -37,9 +37,10 @@ function uiBoard(board, boards, initial_filter, initial_edit, initial_add) {
   return html.evaluate().setTitle(board.title+TITLE_SUFFIX).addMetaTag("viewport", "width=device-width, initial-scale=1").setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 
-function uiList(initial_date, boards) {
+function uiList(initial_date, boards, initial_filter) {
   const html = HtmlService.createTemplateFromFile("UI_list");
   html.initial_date = initial_date;
+  html.initial_filter = initial_filter;
   html.boards = boards;
   return html.evaluate().setTitle("Summary"+TITLE_SUFFIX).addMetaTag("viewport", "width=200, initial-scale=1.25").setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
