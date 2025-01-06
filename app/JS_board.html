@@ -571,7 +571,7 @@ function resetSettingsDialogAsync() {
 
 function saveSettingsSuccess(response) {
   alert(response);
-  window.open('<?= ScriptApp.getService().getUrl() ?>?board=<?= board.title ?>','_self');
+  openBoard('<?= board.title ?>');
 }
 
 // load tasks

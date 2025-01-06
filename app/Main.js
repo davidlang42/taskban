@@ -3,12 +3,14 @@ const TRUNCATE_NOTES_LENGTH = 150;
 const ESSENTIAL_NOTES_DELIMETER = "///";
 const SHOW_DETAILS_THRESHOLD = 5;
 
-// This url will fail if a user is not logged in and has authorised TaskBan
-const INTERNAL_URL = "https://taskban.davidlang.net/app.html"; // URL also hardcoded in appsscript.json
-const EXTERNAL_URL = "https://taskban.davidlang.net/"; // also in app.html
+const INTERNAL_URL = ScriptApp.getService().getUrl(); // also in app.html, index.html
+
+// This url will fail if a user is not logged in and has authorised TaskBan (or is using Safari)
+const EXTERNAL_URL = "https://taskban.davidlang.net/app.html"; // also in app.html, appsscript.json
 
 function doGet(e) {
-  if (e.parameter.redirect === "") return redirect(INTERNAL_URL); // short circuit for speed
+  // NOTE: redirect parameter is only used in production for dealing with logging in when in a frame
+  if (e.parameter.redirect === "") return redirect(EXTERNAL_URL); // short circuit for speed
   const boards = listBoards();
   var boardName = e.parameter.board || e.parameter.b || e.parameter.redirect;
   if (boardName) {
@@ -16,13 +18,13 @@ function doGet(e) {
     const board = findBoard(boardName, boards);
     if (board) {
       if (e.parameter.redirect)
-        return redirect(INTERNAL_URL + "?b=" + board.title.replace(/ /g,"-"));
+        return redirect(EXTERNAL_URL + "?b=" + board.title.replace(/ /g,"-"));
       else
         return uiBoard(board, boards, e.parameter.filter, e.parameter.edit, e.parameter.add);
     }
   }
   if (e.parameter.redirect)
-    return redirect(INTERNAL_URL);
+    return redirect(EXTERNAL_URL);
   else
     return uiList(new Date(), boards, e.parameter.filter);
 }
