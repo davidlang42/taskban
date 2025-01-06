@@ -12,7 +12,7 @@ function buildBoardList() {
   const boards = listBoards();
   const section = CardService.newCardSection();
   for (const board of boards) {
-    const url = INTERNAL_URL+"?b="+board.title.replace(/ /g,"-");
+    const url = EXTERNAL_URL+"?b="+board.title.replace(/ /g,"-");
     const link = CardService.newOpenLink()
       .setUrl(url)
       .setOpenAs(CardService.OpenAs.OVERLAY);
