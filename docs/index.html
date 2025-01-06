@@ -2,5 +2,10 @@
 const INTERNAL_URL = "https://script.google.com/macros/s/AKfycbxSDJouDbOKVTQ3cnnGaJaLW5EbR86YRTwCX-PJb7Mvua9egDM/exec"; // also in Main.js, app.html
 const p = new URLSearchParams(window.location.search);
 const b = p.get('board') ?? p.get('b') ?? "";
-window.open(INTERNAL_URL + '?redirect=' + b, '_top');
+if (window.navigator.userAgent.contains("Safari")) {
+    // Safari blocks XFrames from working even if the header says allow, so use the direct script URL instead of redirecting to app.html with frames
+    window.open(INTERNAL_URL + '?board=' + b, '_top');
+} else {
+    window.open(INTERNAL_URL + '?redirect=' + b, '_top');
+}
 </script>
