@@ -32,13 +32,13 @@ But by all means, [buy me a coffee](https://ko-fi.com/davidlang42).
 * Create version & update existing deployment: `clasp deploy -i [deploymentId] -d "[description]"`
 
 ## Hardcoded details
-The app url is hardcoded in the following places:
+The app urls are hardcoded in the following places:
 * Main.js `const INTERNAL_URL`
-* appsscript.json `addOns.common.universalActions.openLink`
-* app.html `const EXTERNAL_URL`
+* app.html `const INTERNAL_URL`
+* index.html `const INTERNAL_URL`
 * Main.js `const EXTERNAL_URL`
-* app.html `const APP_SCRIPT_URL`
-* index.html `const APP_SCRIPT_URL`
+* app.html `const EXTERNAL_URL`
+* appsscript.json `addOns.common.universalActions.openLink`
 
 ## Future features
 See GitHub [issues](https://github.com/davidlang42/taskban/issues) for a list of new enhancement or known bugs.
