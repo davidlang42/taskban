@@ -284,3 +284,54 @@ function updateTaskState(state, task) {
   }
   return changes;
 }
+
+const DEPENDS_ON = "-->";
+const GRAPH_DEFINITION = "graph RL";
+const UNKNOWN_ID = "unknown"; // will get a number appended to it, must not contain spaces
+
+function graphTasks(boardId, show_tasks, all_tasks) {
+  var state = loadPrerequisiteState(boardId);
+  var lines = [GRAPH_DEFINITION];
+  // generate map from Name -> Id (for all tasks)
+  var task_id_by_name = {};
+  for (const t of all_tasks) {
+    task_id_by_name[t.title] = t.id;
+  }
+  // register dependencies for tasks to show (adding to show_tasks as needed)
+  for (var t = 0; t < show_tasks.length; t++) {
+    const task = show_tasks[t];
+    //Logger.log("Processing " + (t + 1) + "/" + show_tasks.length + ": " + task.title + " (" + task.id + ")");
+    var task_state = state.taskStateById[task.id];
+    if (task_state && task_state.prerequisiteNames && task_state.prerequisiteNames.length) {
+      //Logger.log("Depends on " + task_state.prerequisiteNames);
+      for (const p_name of task_state.prerequisiteNames) {
+        var p_id = task_id_by_name[p_name];
+        if (!p_id) {
+          // we depend on a task we don't know about (probably a date) so lets add a placeholder
+          var i = 0;
+          while (show_tasks.some((x, _) => x.id == UNKNOWN_ID + i)) {
+            i++;
+          }
+          p_id = UNKNOWN_ID + i;
+          task_id_by_name[p_name] = p_id;
+          //Logger.log("Adding unknown " + p_name + " (" + p_id + ")");
+        }
+        if (show_tasks.every((x, _) => x.id != p_id)) {
+          // we depend on a task which we aren't showing, so lets show it
+          show_tasks.push({
+            id: p_id,
+            title: p_name
+          });
+          //Logger.log("Now showing " + p_name + " (" + p_id + ")");
+        }
+        lines.push(task.id + DEPENDS_ON + p_id);
+      }
+    }
+  }
+  // define the names of all tasks we are showing (including those we realised we had to show due to dependency)
+  for (const t of show_tasks) {
+    lines.push(t.id + "[" + t.title + "]");
+  }
+  // return mermaid graph code
+  return lines.join('\n');
+}

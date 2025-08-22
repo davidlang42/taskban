@@ -165,6 +165,7 @@ function showDetails(button, value) {
 }
 
 var longestListLength = 0;
+var anyListIsFiltered = false;
 
 function updateTaskCount() {
   var newLongestListLength = 0;
@@ -172,6 +173,7 @@ function updateTaskCount() {
   var listTotalCount;
   var tasks;
   var lists = document.getElementsByClassName("items");
+  anyListIsFiltered = false;
   for(var list of lists) {
     listVisibleCount = 0;
     listTotalCount = 0;
@@ -190,8 +192,10 @@ function updateTaskCount() {
       heading = list.id;
     else if (listTotalCount == listVisibleCount)
       heading = list.id + " (" + listVisibleCount + ")";
-    else
+    else {
       heading = list.id + " (" + listVisibleCount + "/" + listTotalCount + ")";
+      anyListIsFiltered = true;
+    }
     list.parentNode.getElementsByClassName("card-title")[0].innerHTML = heading;
     if (list.id == "<?= board.properties.list_exit ?>") {
       document.getElementById('exit_clear').style.display = listVisibleCount ? "initial" : "none";
@@ -1205,6 +1209,36 @@ function exportSuccess(csv_file_data, export_file_name) {
   link.style.display = "none";
   document.body.appendChild(link);
   link.click();
+}
+
+// graph
+
+function launchGraph() {
+  var url = "<?= INTERNAL_URL ?>";
+  if (window.parent.parent !== window.top) {
+    url = "<?= EXTERNAL_URL ?>"
+  }
+  var escapedBoardName = encodeURIComponent('<?= board.title ?>'.replace(/ /g,"-"));
+  url += "?b=" + escapedBoardName;
+  if (anyListIsFiltered) {
+    // partial graph
+    var elements = document.getElementsByClassName("task");
+    var anyVisible = false;
+    for(const e of elements) {
+      if (e.style.display != "none") {
+        url += "&g=" + e.id;
+        anyVisible = true;
+      }
+    }
+    if (!anyVisible) {
+      // actually full graph
+      url += "&g=";
+    }
+  } else {
+    // full graph
+    url += "&g=";
+  }
+  window.open(url,"_blank");
 }
 
 // on load

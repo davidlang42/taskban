@@ -1,0 +1,22 @@
+<?
+// inputs: heading = string
+//         graph = string
+//         warnings = string[]
+?>
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_self">
+    <?!= include("JS_common",{board: null}) ?>
+    <?!= include("CSS_common",{board: null}) ?>
+
+    <script src="https://cdn.jsdelivr.net/npm/@mermaid-js/tiny@11/dist/mermaid.tiny.js"></script>
+  </head>
+  <body>
+    <div class="container-fluid pt-3" style="background-color: white;">
+      <h3 class="font-weight-light text-black" style="display: inline-block;"><?= heading ?></h3>
+      <p><?= warnings.join('<br>') ?></p>
+      <pre class="mermaid"><?= graph ?></pre>
+    </div>
+  </body>
+</html>
