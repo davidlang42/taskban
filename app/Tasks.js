@@ -1,6 +1,23 @@
 const LIST_PREFIX = "(";
 const LIST_SUFFIX = ")";
 
+function findTask(taskNameOrId,tasks) {
+  // check for id first
+  for(var i=0; i<tasks.length; i++) {
+    if (tasks[i].id == taskNameOrId) {
+      return tasks[i];
+    }
+  }
+  // then check for name similar to findBoard
+  var matchName = taskNameOrId.toLowerCase().replace(/ /g,"-");
+  for(var i=0; i<tasks.length; i++) {
+    if (tasks[i].title.toLowerCase().replace(/ /g,"-")==matchName) {
+      return tasks[i];
+    }
+  }
+  return null;
+}
+
 // client call
 function getAllTasks(boardId) {
   var board = {id: boardId};
