@@ -20,7 +20,7 @@ function findTask(taskNameOrId,tasks) {
 
 // client call
 function getAllTasks(boardId) {
-  var board = loadBoard(boardId); //TODO ideally this would just be {id: boardId}, but we need board.title in ProcessTask
+  var board = {id: boardId};
   loadBoardProperties(board);
   if (board.properties.enable_prerequisites) { // update prerequisites if enabled
     runPrerequisiteUpdatesForBoard(boardId, false); // does nothing if already locked
@@ -50,7 +50,7 @@ function getUnprocessedTasksById(boardId) {
 
 // client call
 function getManyTasks(boardId, taskIds) {
-  var board = loadBoard(boardId); //TODO ideally this would just be {id: boardId}, but we need board.title in ProcessTask
+  var board = {id: boardId};
   loadBoardProperties(board);
   var tasksById = getUnprocessedTasksById(boardId);
   var tasks = [];
@@ -122,7 +122,7 @@ function getAnyDueDate(after_date_string) {
 
 // client call
 function getTask(boardId, taskId) {
-  var board = loadBoard(boardId); //TODO ideally this would just be {id: boardId}, but we need board.title in ProcessTask
+  var board = {id: boardId};
   loadBoardProperties(board);
   var tasksById = getUnprocessedTasksById(boardId);
   var main = tasksById[taskId];
@@ -173,7 +173,7 @@ function processTask(task, board, parent) {
   const listName = extractListFromName(task);
   task.list = includesIgnoreCase(board.properties.lists, listName);
   //WRONG LIST DIALOG: if (!task.list) task.list = listName; // to be handled by Wrong List dialog
-  if (task.completed && task.title != board.title) task.list = board.properties.list_exit; // special case for overview list due task, keep real list
+  if (task.completed) task.list = board.properties.list_exit;
   if (!task.list) task.list = board.properties.list_entry;
   if (!task.notes) task.notes = "";
   if (parent) task.position = parent.position + "_" + task.position;
@@ -205,7 +205,7 @@ function moveTask(boardId, taskId, listName, afterTaskId) {
 }
 
 function updateTask(boardId,changes,afterTaskId) {
-  var board = loadBoard(boardId); //TODO ideally this would just be {id: boardId}, but we need board.title in ProcessTask, and in this function (updateTask)
+  var board = {id: boardId};
   loadBoardProperties(board);
   if(changes.due) changes.due = formatDateTasks(new Date(changes.due));
   if(changes.due == "") changes.due = null;
@@ -215,9 +215,10 @@ function updateTask(boardId,changes,afterTaskId) {
       changes.status = "completed";
     } else {
       changes.list = includesIgnoreCase(board.properties.lists, changes.list); // to get correct case for list name
-      if(changes.list!=board.properties.list_entry || changes.title == board.title) {
-         // when todo, dont label. it looks nicer (but special case to always add list for list overview task)
+      if(changes.list!=board.properties.list_entry) {
+         // when todo, dont label. it looks nicer
          addListToName(changes, changes.list);
+         //TODO force this to add list name when talking about overview tasks (but can't access board.title here)
       }
     }
     if (!changes.status) changes.status = "needsAction";
@@ -246,7 +247,6 @@ function updateTask(boardId,changes,afterTaskId) {
       updated_tasks_by_id[deleted_task.id] = deleted_task;
     }
   }
-  delete changes['list_before_completed'];
   var main_task;
   if (changes.id) {
     main_task = Tasks.Tasks.patch(changes, boardId, changes.id);
