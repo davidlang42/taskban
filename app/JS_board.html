@@ -251,18 +251,16 @@ function focusFilter() {
 // html formatting
 
 function formatHtmlListDue(task, optimistic) {
-  var id = task.id;
-  var due = task.due;
   if (task.deleted) {
     // reset to default
-    id = "";
-    due = "";
+    task.id = "";
+    task.due = "";
   }
-  var html = '<p data-toggle="modal" data-target="#editDialog" data-date-only="true" data-list="' + task.list + '" data-title="<?= board.title ?>" data-notes="TODO: LINK TO BOARD" data-focus-element="edit_due" data-id="' + id + '" class="task-due';
+  var html = '<p data-toggle="modal" data-target="#editDialog" data-date-only="true" data-list="' + task.list + '" data-title="<?= board.title ?>" data-notes="TODO: LINK TO BOARD" data-focus-element="edit_due" data-id="' + task.id + '" class="task-due';
   if (optimistic) html += ' saving';
-  html += getClassNameForDate(due)+'">';
-  if (due) {
-    html += formatHtmlDate(due);
+  html += getClassNameForDate(task.due)+'">';
+  if (task.due) {
+    html += formatHtmlDate(task.due);
   } else {
     html += "add due";
   }
@@ -635,7 +633,7 @@ function loadTasksSuccess(tasks,optimistic) {
   for(const e of elements) {
     if (hasClass(e.firstChild,"loading")) {
       // make defaults where list overview tasks don't exist
-      e.innerHTML = formatHtmlListDue('', '', e.getAttribute("list-name"), false);
+      e.innerHTML = formatHtmlListDue({id:'',list:e.getAttribute("list-name")}, false);
     }
   }
   removeElementsByClass("loading"); // removes tasks which no longer exist
@@ -644,7 +642,7 @@ function loadTasksSuccess(tasks,optimistic) {
 
 function updateTaskElement(task, optimistic, delayUpdates) {
   var eList = document.getElementById(task.list);
-  if (task.title == "<?= board.title ?>" && task.list != "<? board.properties.list_exit ?>") {
+  if (task.title == "<?= board.title ?>" && task.list != "<?= board.properties.list_exit ?>") {
     // overview task for this list, show due date in header instead of like a normal task
     eList.parentNode.getElementsByClassName('list-due')[0].innerHTML = formatHtmlListDue(task, optimistic);
     return;
