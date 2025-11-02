@@ -113,7 +113,7 @@ function addNewBoardSuccess(board) {
 // html formatting
 
 function getClassNameForDate(date_string) {
-  if(!date_string) return "not_due";
+  if(!date_string) return "";
   var d = new Date(date_string);
   var today = new Date();
   today.setHours(0);

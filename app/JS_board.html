@@ -251,15 +251,9 @@ function focusFilter() {
 // html formatting
 
 function formatHtmlListDue(task,optimistic) {
-  var html = '<p data-toggle="modal" data-target="#editDialog" data-list="' + task.list + '" data-title="<?= board.title ?>" data-notes="TODO: LINK TO BOARD" data-focus-element="edit_due" data-id="' + task.id ?? '' + '" class="task-due'+getClassNameForDate(task.due);
+  var html = '<p class="task-due'+getClassNameForDate(task.due);
   if (optimistic) html += ' saving';
-  html += '">';
-  if (task.due) {
-    html += 'due '+formatHtmlDate(task.due);
-  } else {
-    html += "not due";
-  }
-  html += '</p>';
+  html += '">due '+formatHtmlDate(task.due)+'</p>';
   return html;
 }
 
@@ -598,12 +592,6 @@ function loadTasksAsync() {
   for(const e of elements) {
     addClass(e,"loading");
   }
-  /*
-  elements = document.getElementsByClassName("list_due");
-  for(const e of elements) {
-    addClass(e.childNodes[0],"loading");
-  }
-  */
   google.script.run.withSuccessHandler(loadTasksSuccess).withFailureHandler(showError).getAllTasks("<?= board.id ?>");
 }
 
@@ -623,28 +611,25 @@ function loadTaskSuccess(task) {
 }
 
 function loadTasksSuccess(tasks,optimistic) {
-  for(const task of tasks) {
+  for(const task of tasks)
     updateTaskElement(task, optimistic, true); // true to delayUpdates because: filter is updated below, order won't be out of date for long when bulk loading
-  }
-  /*
-  var elements = document.getElementsByClassName("list_due");
-  for(const e of elements) {
-    if (hasClass(e.childNodes[0],"loading")) {
-      // remove list overview tasks which no longer exist
-      e.innerHTML = formatHtmlListDue({list:e.getAttribute("list-name")}, false);
-    }
-  }*/
-  removeElementsByClass("loading"); // removes tasks which no longer exist
+  removeElementsByClass("loading");
   updateFilter(); // calls updateDropzones() and updateTaskCount()
 }
 
 function updateTaskElement(task, optimistic, delayUpdates) {
-  var eList = document.getElementById(task.list);
-  if (task.title == "<?= board.title ?>") {
-    // overview task for this list, show due date in header instead of like a normal task
-    const due = eList.parentNode.getElementsByClassName('list-due')[0];
-    due.innerHTML = formatHtmlListDue(task, optimistic);
-    return;
+  for (const e of document.getElementsByClassName("list-header")) {
+    if (task.title == "<?= board.title ?>") {
+      // overview task for this list, show due date in header instead of like a normal task
+      e.setAttribute('data-id', task.id);
+      const due = e.parentNode.getElementsByClassName('list-due')[0];
+      if (task.due) {
+        due.innerHTML = formatHtmlListDue(task, optimistic);
+      } else {
+        due.innerHTML = "";
+      }
+      return;
+    }
   }
   if (!optimistic && task.id) {
     if (task.deleted || task.parent) { // exclude subtasks because GTasks UI limits to 1 layer of nesting
@@ -660,6 +645,7 @@ function updateTaskElement(task, optimistic, delayUpdates) {
     return;
   }
   var eTask = $(formatHtmlTask(task,optimistic))[0];
+  var eList = document.getElementById(task.list);
   var positionOutOfDate = false;
   if(eList) {
     if(!existing && !optimistic) existing = matchNewTaskByData(task);
