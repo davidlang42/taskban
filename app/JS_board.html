@@ -611,6 +611,20 @@ function loadTasksSuccess(tasks,optimistic) {
 }
 
 function updateTaskElement(task, optimistic, delayUpdates) {
+  for (const e of document.getElementsByClassName("list-header")) {
+    const list_title = e.getAttribute('data-list');
+    if (task.title == list_title) {
+      // overview task of this list, show due date in header instead of like a normal task
+      e.setAttribute('data-id', task.id);
+      const due = e.parentNode.getElementsByClassName('list-due')[0];
+      if (task.due) {
+        due.innerHTML = '<p class="task-due'+getClassNameForDate(task.due)+'">due '+formatHtmlDate(task.due)+'</p>';
+      } else {
+        due.innerHTML = "";
+      }
+      return;
+    }
+  }
   if (!optimistic && task.id) {
     if (task.deleted || task.parent) { // exclude subtasks because GTasks UI limits to 1 layer of nesting
       removeParentTaskOption(task.id);
