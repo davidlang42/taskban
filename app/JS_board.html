@@ -725,14 +725,14 @@ function configureEditDialogEvents() {
       openEditDialogSuccess({
         id:"",
         list:list,
-        title:"",
-        notes:""
+        title:$(event.relatedTarget).data('title') ?? '',
+        notes:$(event.relatedTarget).data('notes') ?? ''
       });
       pushActionUrl('add', list);
     }
   });
   editDialog.on('shown.bs.modal', function (event) {
-    document.getElementById('edit_title').focus();
+    document.getElementById($(event.relatedTarget).data('focus-element') ?? 'edit_title').focus();
   });
   editDialog.on('hide.bs.modal', function (e) {
     var edit_save = document.getElementById('edit_save');
