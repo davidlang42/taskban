@@ -258,7 +258,7 @@ function formatHtmlListDue(task,optimistic) {
     id = "";
     due = "";
   }
-  var html = '<p data-toggle="modal" data-target="#editDialog" data-list="' + task.list + '" data-title="<?= board.title ?>" data-notes="TODO: LINK TO BOARD" data-focus-element="edit_due" data-id="' + id + '" class="task-due';
+  var html = '<p data-toggle="modal" data-target="#editDialog" data-date-only="true" data-list="' + task.list + '" data-title="<?= board.title ?>" data-notes="TODO: LINK TO BOARD" data-focus-element="edit_due" data-id="' + id + '" class="task-due';
   if (optimistic) html += ' saving';
   html += getClassNameForDate(due)+'">';
   if (due) {
@@ -755,7 +755,7 @@ function configureEditDialogEvents() {
       document.getElementById('dialog_title').innerHTML = "Edit task";
       edit_save.innerHTML = "Save changes";
       google.script.run.withSuccessHandler(openEditDialogSuccess).withFailureHandler(openEditDialogFailure).getTask("<?= board.id ?>",id);
-      pushActionUrl('edit', id);
+      if (!$(event.relatedTarget).data('date-only')) pushActionUrl('edit', id);
     } else {
       // add
       document.getElementById('dialog_title').innerHTML = "Add task";
@@ -766,11 +766,14 @@ function configureEditDialogEvents() {
         title:$(event.relatedTarget).data('title') ?? '',
         notes:$(event.relatedTarget).data('notes') ?? ''
       });
-      pushActionUrl('add', list);
+      if (!$(event.relatedTarget).data('date-only')) pushActionUrl('add', list);
     }
   });
   editDialog.on('shown.bs.modal', function (event) {
     document.getElementById($(event.relatedTarget).data('focus-element') ?? 'edit_title').focus();
+    var date_only = $(event.relatedTarget).data('date-only');
+    document.getElementById('edit_title').disabled = date_only;
+    document.getElementById('edit_list').disabled = date_only;
   });
   editDialog.on('hide.bs.modal', function (e) {
     var edit_save = document.getElementById('edit_save');
