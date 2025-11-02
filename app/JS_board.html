@@ -1071,10 +1071,11 @@ function saveEditDialogAsync(action, immediately_edit_another_task_id) {
     }
   }
   updateTaskElement(changes,true); // add/save (optimistically) in dom immediately, to be updated again on callback
+  var force_include_list = changes.title == "<?= board.title ?>"; // always include list name in list due dates
   if (changes.id) {
-    google.script.run.withSuccessHandler(updateTaskSuccess).withFailureHandler(updateTaskFailure).withUserObject(changes.id).editTask("<?= board.id ?>",changes);
+    google.script.run.withSuccessHandler(updateTaskSuccess).withFailureHandler(updateTaskFailure).withUserObject(changes.id).editTask("<?= board.id ?>", changes, force_include_list);
   } else {
-    google.script.run.withSuccessHandler(updateTaskSuccess).withFailureHandler(addTaskFailure).addTask("<?= board.id ?>",changes);
+    google.script.run.withSuccessHandler(updateTaskSuccess).withFailureHandler(addTaskFailure).addTask("<?= board.id ?>",changes,force_include_list);
   }
   document.getElementById('edit_save').disabled = true; // so that user isn't asked if they want to save changes
   if (immediately_edit_another_task_id) {

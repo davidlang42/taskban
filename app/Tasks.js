@@ -181,13 +181,13 @@ function processTask(task, board, parent) {
 }
 
 // client call
-function editTask(boardId, changes) {
-  return updateTask(boardId, changes);
+function editTask(boardId, changes, forceIncludeList) {
+  return updateTask(boardId, changes, null, forceIncludeList);
 }
   
 // client call
-function addTask(boardId, changes) {
-  return updateTask(boardId, changes);
+function addTask(boardId, changes, forceIncludeList) {
+  return updateTask(boardId, changes, null, forceIncludeList);
 }
 
 // client call
@@ -204,7 +204,7 @@ function moveTask(boardId, taskId, listName, afterTaskId) {
   }, afterTaskId);
 }
 
-function updateTask(boardId,changes,afterTaskId) {
+function updateTask(boardId,changes,afterTaskId,forceIncludeList) {
   var board = {id: boardId};
   loadBoardProperties(board);
   if(changes.due) changes.due = formatDateTasks(new Date(changes.due));
@@ -216,8 +216,7 @@ function updateTask(boardId,changes,afterTaskId) {
       changes.completed = formatDateTasks(new Date());
     } else {
       changes.list = includesIgnoreCase(board.properties.lists, changes.list); // to get correct case for list name
-      if(changes.list!=board.properties.list_entry) addListToName(changes, changes.list); // when todo, dont label. it looks nicer
-      //TODO force this to add list name when talking about overview tasks (but can't access board.title here)
+      if(changes.list!=board.properties.list_entry || forceIncludeList) addListToName(changes, changes.list); // when todo, dont label. it looks nicer
       changes.status = "needsAction";
       changes.completed = null;
     }
