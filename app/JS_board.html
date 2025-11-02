@@ -250,6 +250,26 @@ function focusFilter() {
 
 // html formatting
 
+function formatHtmlListDue(task, optimistic) {
+  var id = task.id;
+  var due = task.due;
+  if (task.deleted) {
+    // reset to default
+    id = "";
+    due = "";
+  }
+  var html = '<p data-toggle="modal" data-target="#editDialog" data-date-only="true" data-list="' + task.list + '" data-title="<?= board.title ?>" data-notes="<?= EXTERNAL_URL ?>?b=<?= encodeURIComponent(board.title.replace(/ /g,"-")) ?>" data-focus-element="edit_due" data-id="' + id + '" class="task-due';
+  if (optimistic) html += ' saving';
+  html += getClassNameForDate(due)+'">';
+  if (due) {
+    html += formatHtmlDate(due);
+  } else {
+    html += "📅";
+  }
+  html += '</p>';
+  return html;
+}
+
 function formatHtmlTask(task,optimistic) {
   var html = '<div class="task filterable card draggable shadow-sm';
   if(optimistic) {
@@ -585,6 +605,10 @@ function loadTasksAsync() {
   for(const e of elements) {
     addClass(e,"loading");
   }
+  elements = document.getElementsByClassName("list-due");
+  for(const e of elements) {
+    addClass(e.firstChild,"loading");
+  }
   google.script.run.withSuccessHandler(loadTasksSuccess).withFailureHandler(showError).getAllTasks("<?= board.id ?>");
 }
 
@@ -604,13 +628,27 @@ function loadTaskSuccess(task) {
 }
 
 function loadTasksSuccess(tasks,optimistic) {
-  for(const task of tasks)
+  for(const task of tasks) {
     updateTaskElement(task, optimistic, true); // true to delayUpdates because: filter is updated below, order won't be out of date for long when bulk loading
-  removeElementsByClass("loading");
+  }
+  var elements = document.getElementsByClassName("list-due");
+  for(const e of elements) {
+    if (hasClass(e.firstChild,"loading")) {
+      // make defaults where list overview tasks don't exist
+      e.innerHTML = formatHtmlListDue({id:'',list:e.getAttribute("list-name")}, false);
+    }
+  }
+  removeElementsByClass("loading"); // removes tasks which no longer exist
   updateFilter(); // calls updateDropzones() and updateTaskCount()
 }
 
 function updateTaskElement(task, optimistic, delayUpdates) {
+  var eList = document.getElementById(task.list);
+  if (task.title == "<?= board.title ?>" && task.list != "<?= board.properties.list_exit ?>") {
+    // overview task for this list, show due date in header instead of like a normal task
+    eList.parentNode.getElementsByClassName('list-due')[0].innerHTML = formatHtmlListDue(task, optimistic);
+    return;
+  }
   if (!optimistic && task.id) {
     if (task.deleted || task.parent) { // exclude subtasks because GTasks UI limits to 1 layer of nesting
       removeParentTaskOption(task.id);
@@ -625,7 +663,6 @@ function updateTaskElement(task, optimistic, delayUpdates) {
     return;
   }
   var eTask = $(formatHtmlTask(task,optimistic))[0];
-  var eList = document.getElementById(task.list);
   var positionOutOfDate = false;
   if(eList) {
     if(!existing && !optimistic) existing = matchNewTaskByData(task);
@@ -717,7 +754,7 @@ function configureEditDialogEvents() {
       document.getElementById('dialog_title').innerHTML = "Edit task";
       edit_save.innerHTML = "Save changes";
       google.script.run.withSuccessHandler(openEditDialogSuccess).withFailureHandler(openEditDialogFailure).getTask("<?= board.id ?>",id);
-      pushActionUrl('edit', id);
+      if (!$(event.relatedTarget).data('date-only')) pushActionUrl('edit', id);
     } else {
       // add
       document.getElementById('dialog_title').innerHTML = "Add task";
@@ -725,14 +762,17 @@ function configureEditDialogEvents() {
       openEditDialogSuccess({
         id:"",
         list:list,
-        title:"",
-        notes:""
+        title:$(event.relatedTarget).data('title') ?? '',
+        notes:$(event.relatedTarget).data('notes') ?? ''
       });
-      pushActionUrl('add', list);
+      if (!$(event.relatedTarget).data('date-only')) pushActionUrl('add', list);
     }
   });
   editDialog.on('shown.bs.modal', function (event) {
-    document.getElementById('edit_title').focus();
+    document.getElementById($(event.relatedTarget).data('focus-element') ?? 'edit_title').focus();
+    var date_only = $(event.relatedTarget).data('date-only');
+    document.getElementById('edit_title').disabled = date_only;
+    document.getElementById('edit_list').disabled = date_only;
   });
   editDialog.on('hide.bs.modal', function (e) {
     var edit_save = document.getElementById('edit_save');
@@ -805,7 +845,7 @@ function openEditDialogSuccess(task) {
   document.getElementById('edit_loading').style.display = "none";
   document.getElementById('edit_body').style.display = "initial";
   if(task.id) {
-    if(task.list != "<?= board.properties.list_exit ?>") {
+    if(task.list != "<?= board.properties.list_exit ?>" && task.title != "<?= board.title ?>") {
       document.getElementById('edit_complete').style.display = "initial";
     }
     document.getElementById('edit_delete').style.display = "initial";
@@ -1031,10 +1071,11 @@ function saveEditDialogAsync(action, immediately_edit_another_task_id) {
     }
   }
   updateTaskElement(changes,true); // add/save (optimistically) in dom immediately, to be updated again on callback
+  var force_include_list = changes.title == "<?= board.title ?>"; // always include list name in list due dates
   if (changes.id) {
-    google.script.run.withSuccessHandler(updateTaskSuccess).withFailureHandler(updateTaskFailure).withUserObject(changes.id).editTask("<?= board.id ?>",changes);
+    google.script.run.withSuccessHandler(updateTaskSuccess).withFailureHandler(updateTaskFailure).withUserObject(changes.id).editTask("<?= board.id ?>", changes, force_include_list);
   } else {
-    google.script.run.withSuccessHandler(updateTaskSuccess).withFailureHandler(addTaskFailure).addTask("<?= board.id ?>",changes);
+    google.script.run.withSuccessHandler(updateTaskSuccess).withFailureHandler(addTaskFailure).addTask("<?= board.id ?>",changes,force_include_list);
   }
   document.getElementById('edit_save').disabled = true; // so that user isn't asked if they want to save changes
   if (immediately_edit_another_task_id) {
