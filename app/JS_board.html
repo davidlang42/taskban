@@ -251,16 +251,18 @@ function focusFilter() {
 // html formatting
 
 function formatHtmlListDue(task, optimistic) {
+  var id = task.id;
+  var due = task.due;
   if (task.deleted) {
     // reset to default
-    task.id = "";
-    task.due = "";
+    id = "";
+    due = "";
   }
-  var html = '<p data-toggle="modal" data-target="#editDialog" data-date-only="true" data-list="' + task.list + '" data-title="<?= board.title ?>" data-notes="TODO: LINK TO BOARD" data-focus-element="edit_due" data-id="' + task.id + '" class="task-due';
+  var html = '<p data-toggle="modal" data-target="#editDialog" data-date-only="true" data-list="' + task.list + '" data-title="<?= board.title ?>" data-notes="TODO: LINK TO BOARD" data-focus-element="edit_due" data-id="' + id + '" class="task-due';
   if (optimistic) html += ' saving';
-  html += getClassNameForDate(task.due)+'">';
-  if (task.due) {
-    html += formatHtmlDate(task.due);
+  html += getClassNameForDate(due)+'">';
+  if (due) {
+    html += formatHtmlDate(due);
   } else {
     html += "📅";
   }
