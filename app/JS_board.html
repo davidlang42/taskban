@@ -260,7 +260,6 @@ function formatHtmlListDue(task, optimistic) {
   }
   var html = '<p data-toggle="modal" data-target="#editDialog" data-date-only="true" data-list="' + task.list + '" data-title="<?= board.title ?>" data-notes="TODO: LINK TO BOARD" data-focus-element="edit_due" data-id="' + id + '" class="task-due';
   if (optimistic) html += ' saving';
-  if (task.completed) html += ' list_exit';
   html += getClassNameForDate(due)+'">';
   if (due) {
     html += formatHtmlDate(due);
@@ -645,10 +644,9 @@ function loadTasksSuccess(tasks,optimistic) {
 
 function updateTaskElement(task, optimistic, delayUpdates) {
   var eList = document.getElementById(task.list);
-  if (task.title == "<?= board.title ?>") {
+  if (task.title == "<?= board.title ?>" && task.list != "<? board.properties.list_exit ?>") {
     // overview task for this list, show due date in header instead of like a normal task
-    const due = eList.parentNode.getElementsByClassName('list-due')[0];
-    due.innerHTML = formatHtmlListDue(task, optimistic);
+    eList.parentNode.getElementsByClassName('list-due')[0].innerHTML = formatHtmlListDue(task, optimistic);
     return;
   }
   if (!optimistic && task.id) {
@@ -1057,14 +1055,7 @@ function saveEditDialogAsync(action, immediately_edit_another_task_id) {
     if (deleted_subtasks.length) {
       if(!window.confirm("Are you sure you want to delete "+deleted_subtasks.length+" sub-task(s)?")) return;
     } 
-    if(action=='complete') {
-      if (changes.title == "<?= board.title ?>") {
-        // special case for list overview task
-        changes.status = "completed";
-      } else {
-        changes.list = "<?= board.properties.list_exit ?>";
-      }
-    }
+    if(action=='complete') changes.list = "<?= board.properties.list_exit ?>";
     // only check title is valid if we aren't deleting it
     if(!changes.title) {
       alert('Task title cannot be blank.');
