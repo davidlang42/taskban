@@ -262,9 +262,9 @@ function formatHtmlListDue(task,optimistic) {
   if (optimistic) html += ' saving';
   html += getClassNameForDate(due)+'">';
   if (due) {
-    html += 'due '+formatHtmlDate(due);
+    html += formatHtmlDate(due);
   } else {
-    html += "not due";
+    html += "add due";
   }
   html += '</p>';
   return html;
