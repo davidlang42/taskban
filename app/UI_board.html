@@ -47,7 +47,7 @@
                 <div class="card bg-light">
                     <div class="list-border card-body">
                         <div>
-                        <h6 class="card-title text-uppercase text-truncate py-2 list-header" style="display: inline-block;" data-toggle="modal" data-target="#editDialog" data-list="<?= list ?>" data-title="<?= board.title ?>" data-notes="TODO: LINK TO BOARD" data-focus-element="edit_due" data-id=""><?= list ?></h6>
+                        <h6 class="card-title text-uppercase text-truncate py-2 list-header" style="display: inline-block;" list-name="<?= list ?>"><?= list ?></h6>
                         <? if (list == board.properties.list_exit) { ?>
                         <div class="float-right">
                           <button type="button" class="btn btn-warning" id="exit_remove_dates" onClick="removeDueDatesCompletedAsync();">Dates</button>
@@ -64,7 +64,7 @@
                           </div>
                           <button class="btn btn-<?= list == board.properties.list_entry ? "primary" : "secondary" ?> btn-sm" data-toggle="modal" data-target="#editDialog" data-list="<?= list ?>"<?!= list == board.properties.list_entry ? ' id="add_to_list_entry"' : '' ?>>+</button>
                         </div>
-                        <div class="float-right list-due"></div>
+                        <div class="float-right list-due"><p>...</p></div>
                         <? } ?>
                         </div>
                         <div class="items border border-light overflow-auto<?= list == board.properties.list_entry ? " list_entry" : "" ?><?= list == board.properties.list_exit ? " list_exit" : "" ?>" id="<?= list ?>" style="max-height: calc(100vh - 200px);">
