@@ -250,10 +250,17 @@ function focusFilter() {
 
 // html formatting
 
-function formatHtmlListDue(id, due, list, completed, optimistic) {
-  var html = '<p data-toggle="modal" data-target="#editDialog" data-date-only="true" data-list="' + list + '" data-title="<?= board.title ?>" data-notes="TODO: LINK TO BOARD" data-focus-element="edit_due" data-id="' + id + '" class="task-due';
+function formatHtmlListDue(task, optimistic) {
+  var id = task.id;
+  var due = task.due;
+  if (task.deleted) {
+    // reset to default
+    id = "";
+    due = "";
+  }
+  var html = '<p data-toggle="modal" data-target="#editDialog" data-date-only="true" data-list="' + task.list + '" data-title="<?= board.title ?>" data-notes="TODO: LINK TO BOARD" data-focus-element="edit_due" data-id="' + id + '" class="task-due';
   if (optimistic) html += ' saving';
-  if (completed) html += ' list_exit';
+  if (task.completed) html += ' list_exit';
   html += getClassNameForDate(due)+'">';
   if (due) {
     html += formatHtmlDate(due);
@@ -637,23 +644,11 @@ function loadTasksSuccess(tasks,optimistic) {
 }
 
 function updateTaskElement(task, optimistic, delayUpdates) {
+  var eList = document.getElementById(task.list);
   if (task.title == "<?= board.title ?>") {
     // overview task for this list, show due date in header instead of like a normal task
-    var completed = false;
-    var list = task.list;
-    if (list == "<?= board.properties.list_exit ?>") {
-      // unlike normal tasks, we actually want to show this as completed in the old list rather than move to done
-      completed = true;
-      list = task.list_before_completed;
-    }
-    alert(JSON.stringify(task));
-    const due = document.getElementById(list).parentNode.getElementsByClassName('list-due')[0];
-    if (task.deleted) {
-      // reset to default
-      due.innerHTML = formatHtmlListDue('', '', list, completed, optimistic);
-    } else {
-      due.innerHTML = formatHtmlListDue(task.id, task.due, list, completed, optimistic);
-    }
+    const due = eList.parentNode.getElementsByClassName('list-due')[0];
+    due.innerHTML = formatHtmlListDue(task, optimistic);
     return;
   }
   if (!optimistic && task.id) {
@@ -663,7 +658,6 @@ function updateTaskElement(task, optimistic, delayUpdates) {
       addParentTaskOption(task.id, task.title, true);
     }
   }
-  var eList = document.getElementById(task.list);
   var existing = document.getElementById(task.id);
   if (task.deleted && !optimistic) {
     // shortcut to remove if confirmed delete
@@ -1064,8 +1058,12 @@ function saveEditDialogAsync(action, immediately_edit_another_task_id) {
       if(!window.confirm("Are you sure you want to delete "+deleted_subtasks.length+" sub-task(s)?")) return;
     } 
     if(action=='complete') {
-      changes.list_before_completed = changes.list;
-      changes.list = "<?= board.properties.list_exit ?>";
+      if (changes.title == "<?= board.title ?>") {
+        // special case for list overview task
+        changes.status = "completed";
+      } else {
+        changes.list = "<?= board.properties.list_exit ?>";
+      }
     }
     // only check title is valid if we aren't deleting it
     if(!changes.title) {

@@ -20,6 +20,10 @@ function listBoards() {
   return Tasks.Tasklists.list({ maxResults: 100 }).items; // this only returns the first 100 lists but that should be fine
 }
 
+function loadBoard(boardId) {
+  return Tasks.Tasklists.get(boardId);
+}
+
 function loadBoardProperties(board) {
   // load existing
   var p = PropertiesService.getUserProperties();
