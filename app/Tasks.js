@@ -221,8 +221,6 @@ function updateTask(boardId,changes,afterTaskId) {
       changes.status = "needsAction";
       changes.completed = null;
     }
-    if (!changes.status) changes.status = "needsAction";
-    changes.completed = status == "completed" ? formatDateTasks(new Date()) : null;
   }
   var updated_tasks_by_id = {};
   if (changes.added_subtasks && !changes.deleted) {
