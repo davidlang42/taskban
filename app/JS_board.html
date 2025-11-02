@@ -843,7 +843,7 @@ function openEditDialogSuccess(task) {
   document.getElementById('edit_loading').style.display = "none";
   document.getElementById('edit_body').style.display = "initial";
   if(task.id) {
-    if(task.list != "<?= board.properties.list_exit ?>") {
+    if(task.list != "<?= board.properties.list_exit ?>" && task.title != "<?= board.title ?>") {
       document.getElementById('edit_complete').style.display = "initial";
     }
     document.getElementById('edit_delete').style.display = "initial";
