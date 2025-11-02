@@ -213,13 +213,13 @@ function updateTask(boardId,changes,afterTaskId) {
     if(changes.list==board.properties.list_exit) {
       // when done, dont label. this is important for recurring tasks
       changes.status = "completed";
+      changes.completed = formatDateTasks(new Date());
     } else {
       changes.list = includesIgnoreCase(board.properties.lists, changes.list); // to get correct case for list name
-      if(changes.list!=board.properties.list_entry) {
-         // when todo, dont label. it looks nicer
-         addListToName(changes, changes.list);
-         //TODO force this to add list name when talking about overview tasks (but can't access board.title here)
-      }
+      if(changes.list!=board.properties.list_entry) addListToName(changes, changes.list); // when todo, dont label. it looks nicer
+      //TODO force this to add list name when talking about overview tasks (but can't access board.title here)
+      changes.status = "needsAction";
+      changes.completed = null;
     }
     if (!changes.status) changes.status = "needsAction";
     changes.completed = status == "completed" ? formatDateTasks(new Date()) : null;
