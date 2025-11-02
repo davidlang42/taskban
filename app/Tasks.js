@@ -173,7 +173,10 @@ function processTask(task, board, parent) {
   const listName = extractListFromName(task);
   task.list = includesIgnoreCase(board.properties.lists, listName);
   //WRONG LIST DIALOG: if (!task.list) task.list = listName; // to be handled by Wrong List dialog
-  if (task.completed) task.list = board.properties.list_exit;
+  if (task.completed) {
+    task.list_before_completed = task.list;
+    task.list = board.properties.list_exit;
+  }
   if (!task.list) task.list = board.properties.list_entry;
   if (!task.notes) task.notes = "";
   if (parent) task.position = parent.position + "_" + task.position;
@@ -211,12 +214,20 @@ function updateTask(boardId,changes,afterTaskId) {
   if(changes.due == "") changes.due = null;
   if(changes.list) {
     if(changes.list==board.properties.list_exit) {
-      // when done, dont label. this is important for recurring tasks
+      if (changes.title == board.title && changes.list_before_completed) {
+        // special case list overview task, should keep list label when completing this
+        changes.list = includesIgnoreCase(board.properties.lists, changes.list_before_completed); // to get correct case for list name
+      } else {
+        // when done, dont label. this is important for recurring tasks
+      }
       changes.status = "completed";
       changes.completed = formatDateTasks(new Date());
     } else {
       changes.list = includesIgnoreCase(board.properties.lists, changes.list); // to get correct case for list name
-      if(changes.list!=board.properties.list_entry) addListToName(changes, changes.list); // when todo, dont label. it looks nicer
+      if(changes.list!=board.properties.list_entry || changes.title == board.title) {
+         // when todo, dont label. it looks nicer (but special case to always add list for list overview task)
+         addListToName(changes, changes.list);
+      }
       changes.status = "needsAction";
       changes.completed = null;
     }
@@ -244,6 +255,7 @@ function updateTask(boardId,changes,afterTaskId) {
       updated_tasks_by_id[deleted_task.id] = deleted_task;
     }
   }
+  delete changes['list_before_completed'];
   var main_task;
   if (changes.id) {
     main_task = Tasks.Tasks.patch(changes, boardId, changes.id);
