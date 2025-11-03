@@ -644,7 +644,7 @@ function loadTasksSuccess(tasks,optimistic) {
 
 function updateTaskElement(task, optimistic, delayUpdates) {
   var eList = document.getElementById(task.list);
-  if (task.title == "<?= board.title ?>" && task.list != "<?= board.properties.list_exit ?>") {
+  if (removeVersionDescriptor(task.title) == "<?= board.title ?>" && task.list != "<?= board.properties.list_exit ?>") {
     // overview task for this list, show due date in header instead of like a normal task
     eList.parentNode.getElementsByClassName('list-due')[0].innerHTML = formatHtmlListDue(task, optimistic);
     return;
