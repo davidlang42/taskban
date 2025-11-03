@@ -58,8 +58,10 @@
                     <div class="collapse navbar-collapse" id="listHeader<?= list.replace(/ /g,"-") ?>">
                       <div class="navbar-nav ml-auto">
                         <? if (list == board.properties.list_exit) { ?>
-                          <button type="button" class="btn btn-warning" id="exit_remove_dates" onClick="removeDueDatesCompletedAsync();">Dates</button>
-                          <button type="button" class="btn btn-success" id="exit_clear" onClick="clearCompletedAsync();">Clear</button>
+                          <div>
+                            <button type="button" class="btn btn-warning" id="exit_remove_dates" onClick="removeDueDatesCompletedAsync();">Dates</button>
+                            <button type="button" class="btn btn-success" id="exit_clear" onClick="clearCompletedAsync();">Clear</button>
+                          </div>
                         <? } else { ?>
                           <div class="list-due" list-name="<?= list ?>"><p>...</p></div>
                           <div>
