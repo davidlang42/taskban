@@ -130,4 +130,17 @@ function getClassNameForDate(date_string) {
   }
   return "";
 }
+
+// version descriptors
+
+const VERSION_OPEN = "[";
+const VERSION_CLOSE = "]";
+
+function removeVersionDescriptor(title) {
+  var start = title.indexOf(VERSION_OPEN);
+  var end = title.indexOf(VERSION_CLOSE);
+  if (start == -1 || end == -1 || start > end) return title;
+  var removed = title.substring(0, start) + title.substring(end + 1);
+  return removed.trim();
+}
 </script>

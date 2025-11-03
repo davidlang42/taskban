@@ -41,40 +41,56 @@
       </div>
     </nav>
     <div class="container-fluid pt-5">
-        <div class="row flex-row flex-nowrap py-3">
-            <? for(var list of board.properties.lists) { ?>
-            <div class="col-12 col-sm-6 col-md-4<?= board.properties.lists.length > 3 ? " col-lg-3" : "" ?><?= board.properties.lists.length >= 6 ? " col-xl-2" : "" ?><?= board.properties.fit_columns ? " col-fit" : "" ?>">
-                <div class="card bg-light">
-                    <div class="list-border card-body">
-                        <div>
-                        <h6 class="card-title text-uppercase text-truncate py-2 list-header" style="display: inline-block;"><?= list ?></h6>
+      <div class="row flex-row flex-nowrap py-3">
+        <? for(var list of board.properties.lists) { ?>
+          <div class="col-12 col-sm-6 col-md-4<?= board.properties.lists.length > 3 ? " col-lg-3" : "" ?><?= board.properties.lists.length >= 6 ? " col-xl-2" : "" ?><?= board.properties.fit_columns ? " col-fit" : "" ?>">
+            <div class="card bg-light">
+              <div class="list-border card-body">
+                <div>
+
+
+
+                  <nav class="navbar navbar-expand-xl navbar-light container-fluid">
+                    <h6 class="card-title text-uppercase text-truncate py-2 list-header" style="display: inline-block;"><?= list ?></h6>
+                    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#listHeader<?= list.replace(/ /g,"-") ?>" aria-controls="listHeader<?= list.replace(/ /g,"-") ?>" aria-expanded="false" aria-label="Toggle header">
+                      <span class="navbar-toggler-icon"></span>
+                    </button>
+                    <div class="collapse navbar-collapse" id="listHeader<?= list.replace(/ /g,"-") ?>">
+                      <div class="navbar-nav ml-auto">
                         <? if (list == board.properties.list_exit) { ?>
-                        <div class="float-right">
-                          <button type="button" class="btn btn-warning" id="exit_remove_dates" onClick="removeDueDatesCompletedAsync();">Dates</button>
-                          <button type="button" class="btn btn-success" id="exit_clear" onClick="clearCompletedAsync();">Clear</button>
-                        </div>
-                        <? } else { ?>
-                        <div class="float-right">
-                          <button type="button" id="dropdown_<?= list ?>" class="btn btn-light btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">↕</button>
-                          <div class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdown_<?= list ?>">
-                            <a class="dropdown-item" onClick="sortListAsync('<?= list ?>','title')">Title</a>
-                            <a class="dropdown-item" onClick="sortListAsync('<?= list ?>','due')">Due date</a>
-                            <a class="dropdown-item" onClick="sortListAsync('<?= list ?>','numeric')">Numeric prefix</a>
-                            <a class="dropdown-item" onClick="sortListAsync('<?= list ?>','recent')">Recently changed</a>
+                          <div>
+                            <button type="button" class="btn btn-warning" id="exit_remove_dates" onClick="removeDueDatesCompletedAsync();">Dates</button>
+                            <button type="button" class="btn btn-success" id="exit_clear" onClick="clearCompletedAsync();">Clear</button>
                           </div>
-                          <button class="btn btn-<?= list == board.properties.list_entry ? "primary" : "secondary" ?> btn-sm" data-toggle="modal" data-target="#editDialog" data-list="<?= list ?>"<?!= list == board.properties.list_entry ? ' id="add_to_list_entry"' : '' ?>>+</button>
-                        </div>
-                        <div class="float-right list-due" list-name="<?= list ?>"><p>...</p></div>
+                        <? } else { ?>
+                          <div>
+                            <button type="button" class="btn btn-light btn-sm list-due" list-name="<?= list ?>"><span>...</span></button>
+                            <button type="button" id="dropdown_<?= list ?>" class="btn btn-light btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">↕</button>
+                            <div class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdown_<?= list ?>">
+                              <a class="dropdown-item" onClick="sortListAsync('<?= list ?>','title')">Title</a>
+                              <a class="dropdown-item" onClick="sortListAsync('<?= list ?>','due')">Due date</a>
+                              <a class="dropdown-item" onClick="sortListAsync('<?= list ?>','numeric')">Numeric prefix</a>
+                              <a class="dropdown-item" onClick="sortListAsync('<?= list ?>','recent')">Recently changed</a>
+                            </div>
+                            <button class="btn btn-<?= list == board.properties.list_entry ? "primary" : "secondary" ?> btn-sm" data-toggle="modal" data-target="#editDialog" data-list="<?= list ?>"<?!= list == board.properties.list_entry ? ' id="add_to_list_entry"' : '' ?>>+</button>
+                          </div>
                         <? } ?>
-                        </div>
-                        <div class="items border border-light overflow-auto<?= list == board.properties.list_entry ? " list_entry" : "" ?><?= list == board.properties.list_exit ? " list_exit" : "" ?>" id="<?= list ?>" style="max-height: calc(100vh - 200px);">
-                            <div class="loading">Loading...</div>
-                        </div>
+                      </div>
                     </div>
+                  </nav>
+
+
+                      
+                      
                 </div>
+                <div class="items border border-light overflow-auto<?= list == board.properties.list_entry ? " list_entry" : "" ?><?= list == board.properties.list_exit ? " list_exit" : "" ?>" id="<?= list ?>" style="max-height: calc(100vh - 200px);">
+                    <div class="loading">Loading...</div>
+                </div>
+              </div>
             </div>
-            <? } ?>
-        </div>
+          </div>
+        <? } ?>
+      </div>
     </div>
     <!-- Edit dialog -->
     <div class="modal fade" id="editDialog" tabindex="-1" role="dialog" aria-hidden="true">

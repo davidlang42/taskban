@@ -258,7 +258,7 @@ function formatHtmlListDue(task, optimistic) {
     id = "";
     due = "";
   }
-  var html = '<p data-toggle="modal" data-target="#editDialog" data-date-only="true" data-list="' + task.list + '" data-title="<?= board.title ?>" data-notes="<?= EXTERNAL_URL ?>?b=<?= encodeURIComponent(board.title.replace(/ /g,"-")) ?>" data-focus-element="edit_due" data-id="' + id + '" class="task-due';
+  var html = '<span data-toggle="modal" data-target="#editDialog" data-date-only="true" data-list="' + task.list + '" data-title="<?= board.title ?>" data-notes="<?= EXTERNAL_URL ?>?b=<?= encodeURIComponent(board.title.replace(/ /g,"-")) ?>" data-focus-element="edit_due" data-id="' + id + '" class="task-due';
   if (optimistic) html += ' saving';
   html += getClassNameForDate(due)+'">';
   if (due) {
@@ -266,7 +266,7 @@ function formatHtmlListDue(task, optimistic) {
   } else {
     html += "📅";
   }
-  html += '</p>';
+  html += '</span>';
   return html;
 }
 
@@ -644,7 +644,7 @@ function loadTasksSuccess(tasks,optimistic) {
 
 function updateTaskElement(task, optimistic, delayUpdates) {
   var eList = document.getElementById(task.list);
-  if (task.title == "<?= board.title ?>" && task.list != "<?= board.properties.list_exit ?>") {
+  if (removeVersionDescriptor(task.title) == "<?= board.title ?>" && task.list != "<?= board.properties.list_exit ?>") {
     // overview task for this list, show due date in header instead of like a normal task
     eList.parentNode.getElementsByClassName('list-due')[0].innerHTML = formatHtmlListDue(task, optimistic);
     return;
