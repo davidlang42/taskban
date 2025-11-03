@@ -47,8 +47,17 @@
                 <div class="card bg-light">
                     <div class="list-border card-body">
                         <div>
-                        <h6 class="card-title text-uppercase text-truncate py-2 list-header" style="display: inline-block;"><?= list ?></h6>
-                        <? if (list == board.properties.list_exit) { ?>
+
+
+
+                          <div class="navbar navbar-expand-lg navbar-light container-fluid">
+                            <h6 class="card-title text-uppercase text-truncate py-2 list-header" style="display: inline-block;"><?= list ?></h6>
+                            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#listHeader<?= list.replace(/ /g,"-") ?>" aria-controls="listHeader<?= list.replace(/ /g,"-") ?>" aria-expanded="false" aria-label="Toggle header">
+                              <span class="navbar-toggler-icon"></span>
+                            </button>
+                            <div class="collapse navbar-collapse" id="listHeader<?= list.replace(/ /g,"-") ?>">
+                              <div class="form-inline my-2 my-lg-0">
+                                <? if (list == board.properties.list_exit) { ?>
                         <div class="float-right">
                           <button type="button" class="btn btn-warning" id="exit_remove_dates" onClick="removeDueDatesCompletedAsync();">Dates</button>
                           <button type="button" class="btn btn-success" id="exit_clear" onClick="clearCompletedAsync();">Clear</button>
@@ -66,6 +75,13 @@
                         </div>
                         <div class="float-right list-due" list-name="<?= list ?>"><p>...</p></div>
                         <? } ?>
+                              </div>
+                            </div>
+                          </div>
+
+
+                        
+                        
                         </div>
                         <div class="items border border-light overflow-auto<?= list == board.properties.list_entry ? " list_entry" : "" ?><?= list == board.properties.list_exit ? " list_exit" : "" ?>" id="<?= list ?>" style="max-height: calc(100vh - 200px);">
                             <div class="loading">Loading...</div>
