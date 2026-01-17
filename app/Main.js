@@ -11,11 +11,11 @@ const EXTERNAL_URL = "https://taskban.davidlang.net/app.html"; // also in app.ht
 function doGet(e) {
   // NOTE: redirect parameter is only used in production for dealing with logging in when in a frame
   if (e.parameter.redirect === "") return redirect(EXTERNAL_URL); // short circuit for speed
-  const boards = listBoards();
   var boardName = e.parameter.board || e.parameter.b || e.parameter.redirect;
   var graphList = e.parameters.graph || e.parameters.g;
   if (boardName) {
     if (boardName.startsWith("/")) boardName = boardName.substring(1);
+    const boards = listBoards();
     const board = findBoard(boardName, boards);
     if (board) {
       if (e.parameter.redirect)
@@ -29,7 +29,7 @@ function doGet(e) {
   if (e.parameter.redirect)
     return redirect(EXTERNAL_URL);
   else
-    return uiList(new Date(), boards, e.parameter.filter);
+    return uiList(new Date(), listBoards(), e.parameter.filter);
 }
 
 function uiBoard(board, boards, initial_filter, initial_edit, initial_add) {

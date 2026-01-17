@@ -1,8 +1,3 @@
-function getBoard(boardName) {
-  var boards = listBoards();
-  return findBoard(boardName,boards);
-}
-
 function findBoard(boardName,boards) {
   var matchName = boardName.toLowerCase().replace(/ /g,"-");
   for(var i=0; i<boards.length; i++) {
@@ -15,9 +10,22 @@ function findBoard(boardName,boards) {
   return null;
 }
 
+// avoid using this where possible, because Tasks API appears to have reduced its quota allowance in Jan 2026
 function listBoards() {
   // loads taskList resources only, not additional properties (which should only be required if displaying that board)
   return Tasks.Tasklists.list({ maxResults: 100 }).items; // this only returns the first 100 lists but that should be fine
+}
+
+// use this where possible, but understand that it will only list boards whose properties have been changed from default
+function listBoardIds() {
+  var p = PropertiesService.getUserProperties();
+  var ids = [];
+  for (const key of p.getKeys()) {
+    if (!key.startsWith(PREREQUISITE_PROPERTY_PREFIX) && !key.startsWith(LOCK_PROPERTY_PREFIX)) {
+      ids.push(key);
+    }
+  }
+  return ids;
 }
 
 function loadBoardProperties(board) {

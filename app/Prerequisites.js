@@ -37,7 +37,8 @@ const PREREQUISITES_LOCK_PREFIX = "prerequisiteUpdates.";
 function runAllPrerequisiteUpdates() {
   var errors = [];
   var errorBoards = [];
-  for (const board of listBoards()) {
+  for (const id of listBoardIds()) {
+    const board = { id: id, title: "Board with id " + id };
     loadBoardProperties(board);
     if (board.properties.enable_prerequisites) {
       try {
@@ -79,8 +80,8 @@ function runPrerequisiteUpdatesForBoard(boardId, errorIfLocked) {
 }
 
 function unlockAllPrerequisiteUpdates() {
-  for (const board of listBoards()) {
-    unlock(PREREQUISITES_LOCK_PREFIX + board.id);
+  for (const id of listBoardIds()) {
+    unlock(PREREQUISITES_LOCK_PREFIX + id);
   }
 }
 
