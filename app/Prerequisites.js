@@ -44,8 +44,12 @@ function runAllPrerequisiteUpdates() {
       try {
         runPrerequisiteUpdatesForBoard(board.id, true); // throws error if already locked
       } catch (err) {
-        errors.push(err);
-        errorBoards.push(board.title + " (" + err.toString() + ")");
+        if (err.message == "API call to tasks.tasks.list failed with error: Task list not found.") {
+          deleteBoardProperties(board);
+        } else {
+          errors.push(err);
+          errorBoards.push(board.title + " (" + err.toString() + ")");
+        }
       }
     } else {
       // to help fix locked boards without opening AppsScripts,
