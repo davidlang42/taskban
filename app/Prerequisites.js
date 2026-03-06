@@ -335,7 +335,9 @@ function graphTasks(boardId, show_tasks, all_tasks) {
   }
   // define the names of all tasks we are showing (including those we realised we had to show due to dependency)
   for (const t of show_tasks) {
-    lines.push(t.id + "[" + t.title + "]");
+    let label = t.title;
+    if (t.list) label += '<br><i>' + t.list;
+    lines.push(t.id + '["' + label.replace('"', '') + '"]');
   }
   // return mermaid graph code
   return lines.join('\n');
