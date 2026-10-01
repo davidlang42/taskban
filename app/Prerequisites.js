@@ -38,7 +38,7 @@ function runAllPrerequisiteUpdates() {
   var errors = [];
   var errorBoards = [];
   for (const id of listBoardIds()) {
-    const board = { id: id, title: "Board with id " + id };
+    const board = { id: id };
     loadBoardProperties(board);
     if (board.properties.enable_prerequisites) {
       try {
@@ -48,7 +48,7 @@ function runAllPrerequisiteUpdates() {
           deleteBoardProperties(board);
         } else {
           errors.push(err);
-          errorBoards.push(board.title + " (" + err.toString() + ")");
+          errorBoards.push(getBoardTitle(board.id) + " (" + err.toString() + ")");
         }
       }
     } else {
@@ -79,9 +79,16 @@ function runPrerequisiteUpdatesForBoard(boardId, errorIfLocked) {
     }
     return processed;
   } else if (errorIfLocked) {
+    var locked_since = timestampOfLock(PREREQUISITES_LOCK_PREFIX + boardId);
+    if (locked_since && Date.now() - locked_since > MAX_EXECUTION_MS) {
+      // whatever took the lock must have finished by now
+      unlock(PREREQUISITES_LOCK_PREFIX + boardId); // this run still fails, but at least it will work next time
+    }
     throw Error("Cannot run prerequisite updates for locked board: " + boardId);
   }
 }
+
+const MAX_EXECUTION_MS = 6 * 60 * 1000; // 6min
 
 function unlockAllPrerequisiteUpdates() {
   for (const id of listBoardIds()) {
