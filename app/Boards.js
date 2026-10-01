@@ -16,6 +16,16 @@ function listBoards() {
   return Tasks.Tasklists.list({ maxResults: 100 }).items; // this only returns the first 100 lists but that should be fine
 }
 
+// avoid using this where possible, because Tasks API appears to have reduced its quota allowance in Jan 2026
+function getBoardTitle(boardId) {
+  var result = Tasks.Tasklists.get(boardId);
+  if (result && result.title) {
+    return result.title;
+  } else {
+    return "Unknown title for board with id " + boardId;
+  }
+}
+
 // use this where possible, but understand that it will only list boards whose properties have been changed from default
 function listBoardIds() {
   var p = PropertiesService.getUserProperties();
